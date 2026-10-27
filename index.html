@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PokéRips - Mobile TCG Card Rip Simulator</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brandDark: '#030303',
+            brandSurface: '#0a0a0a',
+            brandCard: 'rgba(255, 255, 255, 0.03)',
+            brandBorder: 'rgba(255, 255, 255, 0.1)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #030303;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 80% 100%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+      color: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    /* Glassmorphism Panel Classes */
+    .glass-panel {
+      background: rgba(15, 15, 15, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .glass-card:active, .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .glass-btn {
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.15s ease;
+    }
+
+    .glass-btn:active {
+      transform: scale(0.96);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* 3D Card & Pack Tilt Containers */
+    .card-3d-wrap, .pack-3d-wrap {
+      perspective: 1000px;
+    }
+    
+    .card-3d, .pack-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.1s ease-out, box-shadow 0.2s ease;
+      will-change: transform;
+    }
+
+    /* Foil Overlays */
+    .foil-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 10;
+      mix-blend-mode: color-dodge;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .card-3d-wrap:hover .foil-overlay, .pack-3d-wrap:hover .foil-overlay, .active-foil .foil-overlay {
+      opacity: 0.9;
+    }
+
+    /* Holo Foils */
+    .foil-holo {
+      background: linear-gradient(
+        calc(var(--pointer-x, 50) * 3.6deg),
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(150, 150, 150, 0.1) 30%,
+        rgba(255, 255, 255, 0.45) 60%,
+        rgba(100, 100, 100, 0.1) 100%
+      );
+      background-size: 200% 200%;
+    }
+
+    .foil-reverse {
+      background: radial-gradient(
+        circle at var(--pointer-x, 50)% var(--pointer-y, 50)%,
+        rgba(255, 255, 255, 0.55) 0%,
+        rgba(200, 200, 200, 0.15) 50%,
+        transparent 80%
+      );
+      mix-blend-mode: overlay;
+    }
+
+    .foil-ir {
+      background: radial-gradient(
+        circle at var(--pointer-x, 50)% var(--pointer-y, 50)%,
+        rgba(255, 255, 255, 0.75) 0%,
+        rgba(180, 180, 180, 0.3) 40%,
+        transparent 80%
+      );
+      filter: brightness(1.2) contrast(1.2);
+    }
+
+    .foil-sir {
+      background: 
+        radial-gradient(circle at var(--pointer-x, 50)% var(--pointer-y, 50)%, rgba(255, 255, 255, 0.85) 0%, rgba(200, 200, 200, 0.4) 35%, transparent 80%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.18) 0px, rgba(255,255,255,0.18) 2px, transparent 2px, transparent 4px);
+      filter: brightness(1.3);
+    }
+
+    .foil-gold {
+      background: radial-gradient(
+        circle at var(--pointer-x, 50)% var(--pointer-y, 50)%,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(220, 220, 220, 0.5) 40%,
+        rgba(150, 150, 150, 0.2) 80%
+      );
+      box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5);
+    }
+
+    .card-glare {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 11;
+      background: radial-gradient(
+        circle at var(--pointer-x, 50)% var(--pointer-y, 50)%,
+        rgba(255, 255, 255, 0.35) 0%,
+        transparent 60%
+      );
+      mix-blend-mode: soft-light;
+    }
+
+    /* Sealed Booster Pack Custom Crimp Edges */
+    .pack-crimp-top {
+      background: linear-gradient(180deg, #1f1f1f 0%, #3a3a3a 50%, #171717 100%);
+      position: relative;
+    }
+    .pack-crimp-top::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(0,0,0,0.85),
+        rgba(0,0,0,0.85) 2px,
+        rgba(255,255,255,0.25) 3px,
+        rgba(255,255,255,0.25) 4px
+      );
+      pointer-events: none;
+    }
+
+    .pack-crimp-bottom {
+      background: linear-gradient(0deg, #1f1f1f 0%, #3a3a3a 50%, #171717 100%);
+      position: relative;
+    }
+    .pack-crimp-bottom::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(0,0,0,0.85),
+        rgba(0,0,0,0.85) 2px,
+        rgba(255,255,255,0.25) 3px,
+        rgba(255,255,255,0.25) 4px
+      );
+      pointer-events: none;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #050505;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #262626;
+      border-radius: 4px;
+    }
+
+    /* Animations */
+    .card-slide-off {
+      transform: translateY(-130%) rotate(-8deg) scale(0.9) !important;
+      opacity: 0;
+      transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes packShake {
+      0% { transform: rotate(0deg) scale(1); }
+      20% { transform: rotate(-4deg) scale(1.02); }
+      40% { transform: rotate(4deg) scale(1.02); }
+      60% { transform: rotate(-3deg) scale(1.03); }
+      80% { transform: rotate(3deg) scale(1.03); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+    .animate-pack-shake {
+      animation: packShake 0.4s ease-in-out;
+    }
+
+    @keyframes topCrimpPeel {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-130px) rotate(-18deg) scale(0.85); opacity: 0; }
+    }
+    .peel-off-top {
+      animation: topCrimpPeel 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    .rare-border-glow {
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen custom-scrollbar pb-24 md:pb-12">
+
+  <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-6 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="glass-panel rounded-2xl p-3 sm:p-4 mb-3 sm:mb-6 shadow-2xl flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 bg-amber-400 text-black rounded-xl flex items-center justify-center text-lg font-black shadow-lg shrink-0">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+          <div>
+            <h1 class="text-base sm:text-xl font-black tracking-wider text-white flex items-center gap-1.5 leading-none">
+              POKÉ-RIPS
+            </h1>
+            <p class="text-[10px] sm:text-xs text-neutral-400 font-medium mt-1">
+              Booster Opening Simulator
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button 
+            onclick="openDailyWheelModal()"
+            class="bg-white hover:bg-neutral-200 text-black font-black px-2.5 py-2 rounded-xl text-xs flex items-center gap-1 shadow active:scale-95 transition min-h-[40px]"
+          >
+            <i class="fa-solid fa-gift text-amber-500 text-sm"></i>
+            <span class="hidden sm:inline">Daily</span>
+          </button>
+          <button 
+            onclick="openAddCoinsModal()"
+            class="bg-amber-400 hover:bg-amber-300 text-black font-black px-2.5 py-2 rounded-xl text-xs flex items-center gap-1 shadow active:scale-95 transition min-h-[40px]"
+          >
+            <i class="fa-solid fa-circle-plus text-sm"></i>
+            <span class="hidden sm:inline">Add Coins</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Portfolio & Balance Bar -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="glass-btn rounded-xl px-3 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-chart-line text-neutral-400 text-xs"></i>
+            <span class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-widest">Portfolio</span>
+          </div>
+          <div id="portfolio-value-display" class="text-xs sm:text-sm font-black text-white">$0.00</div>
+        </div>
+
+        <div class="glass-btn rounded-xl px-3 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-coins text-amber-400 text-xs"></i>
+            <span class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-widest">Coins</span>
+          </div>
+          <div id="coins-display" class="text-xs sm:text-sm font-black text-amber-400">500</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Desktop Navigation Bar -->
+    <nav class="hidden md:flex sticky top-2 z-40 bg-black/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 mb-6 justify-center gap-2 shadow-2xl">
+      <button id="tab-btn-packs-desktop" onclick="switchTab('packs')" class="tab-btn-d px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition bg-white text-black">
+        <i class="fa-solid fa-boxes-stacked"></i> Booster Store
+      </button>
+      <button id="tab-btn-binder-desktop" onclick="switchTab('binder')" class="tab-btn-d px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition glass-btn text-neutral-400 hover:text-white">
+        <i class="fa-solid fa-book-bookmark"></i> Binder (<span class="binder-count-badge">0</span>)
+      </button>
+      <button id="tab-btn-search-desktop" onclick="switchTab('search')" class="tab-btn-d px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition glass-btn text-neutral-400 hover:text-white">
+        <i class="fa-solid fa-magnifying-glass"></i> Search Database
+      </button>
+    </nav>
+
+    <!-- TAB 1: PACK STORE -->
+    <div id="tab-packs" class="tab-content">
+      <div class="mb-4 text-center md:text-left">
+        <h2 class="text-lg sm:text-xl font-black text-white flex items-center justify-center md:justify-start gap-2 tracking-tight">
+          Universal Booster Pack
+        </h2>
+        <p class="text-xs text-neutral-400 mt-0.5">Includes cards from Base Set (1999) to current sets with official TCG odds!</p>
+      </div>
+      <div id="featured-sets-grid" class="max-w-3xl mx-auto"></div>
+    </div>
+
+    <!-- TAB 2: MY BINDER -->
+    <div id="tab-binder" class="tab-content hidden">
+      <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 class="text-lg sm:text-xl font-black text-white tracking-tight">Vaulted Card Binder</h2>
+          <p class="text-xs text-neutral-400">Your card collection with live market values.</p>
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <select id="binder-filter-set" onchange="renderBinder()" class="flex-1 sm:flex-none glass-btn text-xs text-neutral-200 rounded-xl px-3 py-2.5 focus:outline-none border border-white/10 min-h-[42px]">
+            <option value="all">All Sets</option>
+          </select>
+          <select id="binder-sort-select" onchange="renderBinder()" class="flex-1 sm:flex-none glass-btn text-xs text-neutral-200 rounded-xl px-3 py-2.5 focus:outline-none border border-white/10 min-h-[42px]">
+            <option value="value-desc">Highest Value</option>
+            <option value="value-asc">Lowest Value</option>
+            <option value="recent">Most Recent</option>
+            <option value="name">Card Name (A-Z)</option>
+          </select>
+        </div>
+      </div>
+      <div id="binder-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-4"></div>
+    </div>
+
+    <!-- TAB 3: SEARCH ALL CARDS -->
+    <div id="tab-search" class="tab-content hidden">
+      <div class="max-w-xl mx-auto mb-4 sm:mb-6">
+        <form onsubmit="handleSearch(event)" class="flex gap-2">
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search Pokémon name (e.g. Charizard, Pikachu)..."
+            class="flex-1 glass-btn rounded-xl px-3.5 py-3 text-white text-xs focus:outline-none focus:border-amber-400/60 min-h-[44px]"
+          />
+          <button
+            type="submit"
+            class="bg-amber-400 hover:bg-amber-300 text-black font-extrabold px-4 sm:px-6 py-3 rounded-xl text-xs transition shadow-lg shrink-0 min-h-[44px]"
+          >
+            Search
+          </button>
+        </form>
+      </div>
+
+      <div id="search-results-header" class="hidden flex justify-between items-center mb-3">
+        <h3 id="search-count-title" class="text-xs sm:text-sm font-bold text-white">Found Pokémon Cards</h3>
+      </div>
+
+      <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3"></div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Touch Navigation Bar -->
+  <div class="fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/90 backdrop-blur-xl border-t border-white/10 px-2 py-2 flex justify-around items-center md:hidden">
+    <button 
+      id="tab-btn-packs-mobile" 
+      onclick="switchTab('packs')" 
+      class="tab-btn-m flex flex-col items-center justify-center py-1 px-3 rounded-xl text-amber-400 transition"
+    >
+      <i class="fa-solid fa-boxes-stacked text-base mb-1"></i>
+      <span class="text-[10px] font-extrabold">Store</span>
+    </button>
+    <button 
+      id="tab-btn-binder-mobile" 
+      onclick="switchTab('binder')" 
+      class="tab-btn-m flex flex-col items-center justify-center py-1 px-3 rounded-xl text-neutral-400 transition"
+    >
+      <i class="fa-solid fa-book-bookmark text-base mb-1"></i>
+      <span class="text-[10px] font-extrabold">Binder (<span class="binder-count-badge">0</span>)</span>
+    </button>
+    <button 
+      id="tab-btn-search-mobile" 
+      onclick="switchTab('search')" 
+      class="tab-btn-m flex flex-col items-center justify-center py-1 px-3 rounded-xl text-neutral-400 transition"
+    >
+      <i class="fa-solid fa-magnifying-glass text-base mb-1"></i>
+      <span class="text-[10px] font-extrabold">Search</span>
+    </button>
+  </div>
+
+  <!-- PACK OPENING OVERLAY MODAL -->
+  <div id="pack-overlay" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl hidden flex items-center justify-center p-3 overflow-y-auto">
+    
+    <!-- Loading State -->
+    <div id="pack-loading" class="text-center hidden p-4">
+      <i class="fa-solid fa-spinner text-4xl text-amber-400 animate-spin mb-3"></i>
+      <p class="text-sm font-bold text-white">Assembling Booster Pack...</p>
+      <p id="pack-loading-status" class="text-xs text-neutral-400 mt-1">Generating 10 cards with official TCG odds</p>
+    </div>
+
+    <!-- SEALED BOOSTER PACK SCREEN -->
+    <div id="pack-sealed-container" class="max-w-xs sm:max-w-sm w-full text-center hidden flex flex-col items-center my-auto">
+      <div class="text-[10px] font-bold text-neutral-400 mb-3 uppercase tracking-widest flex items-center justify-center gap-1">
+        <i class="fa-solid fa-hand-pointer text-amber-400"></i> TAP PACK TO RIP OPEN
+      </div>
+
+      <!-- Sealed Pack Wrapper Container -->
+      <div id="sealed-pack-3d-wrap" class="pack-3d-wrap cursor-pointer mb-5 w-full max-w-[240px] sm:max-w-[260px]" onclick="handlePackTearClick()">
+        <div id="sealed-pack-inner" class="pack-3d w-full h-[380px] sm:h-[420px] relative rounded-2xl overflow-hidden glass-card border border-white/20 shadow-2xl flex flex-col justify-between">
+          
+          <!-- Top Foil Crimp -->
+          <div id="pack-top-crimp" class="pack-crimp-top h-12 w-full border-b border-white/20 p-2 flex items-center justify-center relative z-30 transition">
+            <span class="text-[9px] font-black text-black uppercase tracking-widest bg-amber-400 px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 border border-amber-300 relative z-10">
+              <i class="fa-solid fa-scissors text-xs"></i> TAP TO RIP
+            </span>
+          </div>
+
+          <!-- Main Pack Art Body -->
+          <div id="pack-main-body" class="w-full flex-1 relative flex flex-col justify-between p-3 bg-neutral-950 overflow-hidden">
+            <div id="sealed-pack-bg" class="absolute inset-0 bg-cover bg-center opacity-30 filter blur-sm"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/90 z-0"></div>
+
+            <div class="relative z-10 text-center pt-1">
+              <span id="sealed-pack-era" class="text-[8px] font-black uppercase tracking-widest bg-white/10 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/20">
+                1999 - 2026
+              </span>
+              <h3 id="sealed-pack-title" class="text-base font-black text-white mt-1 tracking-tight drop-shadow-md">
+                Universal Master Booster
+              </h3>
+            </div>
+
+            <div class="relative z-10 my-auto flex justify-center py-2">
+              <img id="sealed-pack-art-img" src="" alt="Pack Cover" class="h-40 sm:h-48 object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)]" />
+            </div>
+
+            <div class="relative z-10 bg-black/60 py-1 px-2 rounded-lg text-center border border-white/10 backdrop-blur-sm">
+              <span class="text-[8px] font-black text-neutral-300 tracking-widest uppercase">
+                10 POKÉMON CARDS • OFFICIAL ODDS
+              </span>
+            </div>
+          </div>
+
+          <!-- Bottom Crimp Bar -->
+          <div class="pack-crimp-bottom h-5 w-full border-t border-white/20 flex items-center justify-center relative z-20">
+            <span class="text-[7px] font-black text-white/50 tracking-widest uppercase relative z-10">FACTORY SEALED</span>
+          </div>
+
+          <div class="foil-overlay foil-holo opacity-50"></div>
+          <div class="card-glare"></div>
+        </div>
+      </div>
+
+      <button
+        onclick="handlePackTearClick()"
+        class="w-full max-w-[240px] bg-amber-400 hover:bg-amber-300 text-black font-black py-3 rounded-xl text-xs transition active:scale-95 shadow-xl flex items-center justify-center gap-2 min-h-[44px]"
+      >
+        <i class="fa-solid fa-scissors"></i> RIP & PEEL PACK
+      </button>
+    </div>
+
+    <!-- 10-CARD STACK REVEAL VIEWPORT -->
+    <div id="pack-cards-container" class="max-w-sm w-full text-center hidden flex flex-col items-center my-auto">
+      <div class="w-full flex justify-between items-center mb-2 px-1">
+        <span id="card-counter-badge" class="text-xs font-bold text-neutral-300 tracking-widest uppercase">
+          Card 1 of 10
+        </span>
+        <button
+          onclick="vaultAllRemainingCards()"
+          class="text-xs text-white font-extrabold flex items-center gap-1 glass-btn px-2.5 py-1.5 rounded-lg border border-white/10 active:scale-95 min-h-[36px]"
+        >
+          <i class="fa-solid fa-box-archive text-[10px]"></i> Vault All
+        </button>
+      </div>
+
+      <!-- Card Container Stack -->
+      <div 
+        id="card-reveal-viewport"
+        class="w-60 sm:w-68 aspect-[3/4] max-h-[52vh] relative rounded-2xl card-3d-wrap cursor-pointer my-2"
+        onclick="handleCardClick()"
+      >
+        <div id="holo-card-element" class="w-full h-full card-3d relative rounded-2xl overflow-hidden shadow-2xl bg-neutral-950 border border-white/15">
+          <div class="w-full h-full relative bg-neutral-950">
+            <img id="reveal-card-img" src="" alt="Card" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+            <div id="reveal-foil-overlay" class="foil-overlay"></div>
+            <div class="card-glare"></div>
+
+            <div class="absolute bottom-2 left-2 right-2 glass-panel rounded-xl p-2 border border-white/15 z-20 flex justify-between items-center text-left shadow-2xl">
+              <div class="min-w-0 pr-2">
+                <div id="reveal-card-name" class="text-xs font-black text-white truncate">Charizard ex</div>
+                <div id="reveal-card-rarity" class="text-[9px] text-neutral-300 font-bold truncate">Special Illustration Rare</div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-[8px] text-neutral-400 uppercase font-black tracking-widest">Value</div>
+                <div id="reveal-card-price" class="text-xs font-black text-amber-400">$145.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-[10px] text-neutral-400 my-1.5 font-semibold tracking-wider flex items-center justify-center gap-1">
+        <i class="fa-solid fa-hand-pointer text-amber-400"></i> Tap card or swipe up to auto-vault
+      </div>
+
+      <div class="flex items-center gap-2 w-full max-w-[280px] mt-2">
+        <button
+          onclick="ripCurrentCard(event)"
+          class="flex-1 glass-btn hover:bg-neutral-900 text-white border border-white/15 font-black py-2.5 rounded-xl text-xs transition active:scale-95 flex flex-col items-center justify-center shadow min-h-[46px]"
+        >
+          <span class="flex items-center gap-1"><i class="fa-solid fa-fire text-amber-400"></i> SELL (RIP)</span>
+          <span id="rip-coin-value" class="text-[9px] text-amber-400 font-bold flex items-center gap-0.5">+<i class="fa-solid fa-coins text-amber-400"></i> 290</span>
+        </button>
+
+        <button
+          onclick="vaultCurrentCard(event)"
+          class="flex-1 bg-white hover:bg-neutral-200 text-black font-black py-2.5 rounded-xl text-xs transition active:scale-95 shadow-xl flex flex-col items-center justify-center min-h-[46px]"
+        >
+          <span class="flex items-center gap-1"><i class="fa-solid fa-box-archive text-black"></i> KEEP (VAULT)</span>
+          <span class="text-[9px] text-black/70 font-bold">Add to Binder</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSPECT CARD MODAL -->
+  <div id="inspect-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-panel rounded-2xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 relative border border-white/15 shadow-2xl my-auto">
+      <button onclick="closeInspectModal()" class="absolute top-3 right-3 text-neutral-400 hover:text-white text-base w-8 h-8 flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex flex-col items-center text-center">
+        <div id="inspect-card-viewport" class="w-44 sm:w-52 aspect-[3/4] relative card-3d-wrap active-foil mb-4">
+          <div id="inspect-slab-wrapper" class="w-full h-full card-3d relative rounded-xl overflow-hidden border border-white/20">
+            <img id="inspect-card-img" src="" alt="Card" class="w-full h-full object-contain bg-black" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+            <div id="inspect-foil-overlay" class="foil-overlay"></div>
+            <div class="card-glare"></div>
+          </div>
+        </div>
+
+        <div class="w-full">
+          <span id="inspect-card-rarity" class="text-[9px] font-extrabold uppercase tracking-widest bg-white/10 text-neutral-200 px-2.5 py-0.5 rounded-full border border-white/15">
+            Special Illustration Rare
+          </span>
+          <h3 id="inspect-card-name" class="text-base sm:text-lg font-black text-white mt-2 tracking-tight truncate">Charizard ex</h3>
+          <p id="inspect-card-set" class="text-xs text-neutral-400 mb-3 truncate">Scarlet & Violet 151 • #199</p>
+
+          <div class="glass-btn p-2.5 rounded-xl border border-white/10 mb-4 flex justify-between items-center">
+            <span class="text-[10px] text-neutral-400 uppercase font-black tracking-widest">Market Value</span>
+            <span id="inspect-card-value" class="text-base font-black text-amber-400">$145.00</span>
+          </div>
+
+          <button
+            id="inspect-sell-btn"
+            onclick="sellInspectedCard()"
+            class="w-full glass-btn hover:bg-white hover:text-black text-white font-extrabold py-3 rounded-xl text-xs transition border border-white/15 active:scale-95 min-h-[44px]"
+          >
+            Sell Card for PokéCoins
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY WHEEL / BONUS MODAL -->
+  <div id="daily-wheel-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-xs sm:max-w-sm w-full p-5 text-center relative border border-white/15 shadow-2xl">
+      <button onclick="closeDailyWheelModal()" class="absolute top-3 right-3 text-neutral-400 hover:text-white text-base w-8 h-8 flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xl font-black mb-3 border border-amber-400/30">
+        <i class="fa-solid fa-gift"></i>
+      </div>
+
+      <h3 class="text-lg font-black text-white mb-1 tracking-tight">Daily PokéBonus</h3>
+      <p class="text-xs text-neutral-400 mb-4">Claim your daily allowance of PokéCoins!</p>
+
+      <div class="glass-card rounded-2xl p-3 border border-white/10 mb-4">
+        <div class="text-[9px] text-neutral-400 uppercase font-bold tracking-widest mb-1">Bonus Allowance</div>
+        <div class="text-xl font-black text-amber-400 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-coins"></i> +250 PokéCoins
+        </div>
+      </div>
+
+      <button
+        id="claim-daily-btn"
+        onclick="claimDailyBonus()"
+        class="w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-3 rounded-xl text-xs transition shadow-xl active:scale-95 flex items-center justify-center gap-2 min-h-[44px]"
+      >
+        <i class="fa-solid fa-bolt"></i> CLAIM BONUS NOW
+      </button>
+    </div>
+  </div>
+
+  <!-- ADD POKECOINS MODAL -->
+  <div id="coins-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-xs sm:max-w-sm w-full p-5 text-center relative border border-white/15 shadow-2xl">
+      <button onclick="closeAddCoinsModal()" class="absolute top-3 right-3 text-neutral-400 hover:text-white text-base w-8 h-8 flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xl font-black mb-2 border border-amber-400/30">
+        <i class="fa-solid fa-coins"></i>
+      </div>
+
+      <h3 class="text-lg font-black text-white mb-1 tracking-tight">Add PokéCoins</h3>
+      <p class="text-xs text-neutral-400 mb-4">Select or type custom coin amount.</p>
+
+      <div class="grid grid-cols-4 gap-1.5 mb-3">
+        <button onclick="addCustomCoins(100)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+          +100
+        </button>
+        <button onclick="addCustomCoins(500)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+          +500
+        </button>
+        <button onclick="addCustomCoins(1000)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+          +1k
+        </button>
+        <button onclick="addCustomCoins(5000)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+          +5k
+        </button>
+      </div>
+
+      <div class="space-y-2.5">
+        <div class="relative">
+          <input
+            id="custom-coins-input"
+            type="number"
+            min="1"
+            placeholder="Custom amount..."
+            class="w-full glass-btn rounded-xl px-3.5 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-amber-400/60 pr-10 min-h-[42px]"
+          />
+          <div class="absolute right-3 top-3 text-amber-400 text-xs">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button
+            onclick="addCustomCoinsFromInput()"
+            class="flex-1 bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-2.5 rounded-xl text-xs transition shadow-lg active:scale-95 flex items-center justify-center gap-1 min-h-[42px]"
+          >
+            <i class="fa-solid fa-plus"></i> Add
+          </button>
+          <button
+            onclick="setCustomCoinsFromInput()"
+            class="flex-1 glass-btn hover:bg-white hover:text-black text-white font-extrabold py-2.5 rounded-xl text-xs transition border border-white/15 active:scale-95 flex items-center justify-center gap-1 min-h-[42px]"
+          >
+            <i class="fa-solid fa-pen-to-square"></i> Set
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    // Audio Synthesizer Engine
+    const SoundEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+
+      playSlide() {
+        try {
+          this.init();
+          const now = this.ctx.currentTime;
+          const duration = 0.15;
+          const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            const progress = i / bufferSize;
+            const env = Math.pow(1 - progress, 1.8) * Math.sin(progress * Math.PI);
+            data[i] = (Math.random() * 2 - 1) * env;
+          }
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+
+          const bandpass = this.ctx.createBiquadFilter();
+          bandpass.type = 'bandpass';
+          bandpass.frequency.setValueAtTime(2000, now);
+          bandpass.frequency.exponentialRampToValueAtTime(600, now + duration);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+          noise.connect(bandpass);
+          bandpass.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start(now);
+        } catch(e){}
+      },
+
+      playSnap() {
+        try {
+          this.init();
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(90, now + 0.03);
+
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.035);
+        } catch(e){}
+      },
+
+      playTear() {
+        try {
+          this.init();
+          const now = this.ctx.currentTime;
+          const duration = 0.35;
+          const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+
+          for (let i = 0; i < bufferSize; i++) {
+            const t = i / bufferSize;
+            const chatter = Math.sin(i * 0.08) > 0.3 ? 1.0 : 0.25;
+            data[i] = (Math.random() * 2 - 1) * Math.sin(t * Math.PI) * chatter;
+          }
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+
+          const hp = this.ctx.createBiquadFilter();
+          hp.type = 'highpass';
+          hp.frequency.setValueAtTime(2000, now);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+          noise.connect(hp);
+          hp.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start(now);
+        } catch(e){}
+      },
+
+      playRareHit() {
+        try {
+          this.init();
+          const frequencies = [523.25, 659.25, 783.99, 1046.50];
+          const now = this.ctx.currentTime;
+          frequencies.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+            gain.gain.setValueAtTime(0.12, now + idx * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.04 + 0.4);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + idx * 0.04);
+            osc.stop(now + idx * 0.04 + 0.45);
+          });
+        } catch(e){}
+      },
+
+      playCoin() {
+        try {
+          this.init();
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(987.77, now);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } catch(e){}
+      }
+    };
+
+    // Global State & LocalStorage Persistence
+    let coins = parseInt(localStorage.getItem('pokerips_coins') || '500');
+    let binder = JSON.parse(localStorage.getItem('pokerips_binder') || '[]');
+    let lastDailyClaim = parseInt(localStorage.getItem('pokerips_last_daily') || '0');
+    
+    // Cached Card Pool in localStorage
+    let cachedPool = [];
+    try {
+      cachedPool = JSON.parse(localStorage.getItem('pokerips_card_pool') || '[]');
+    } catch(e) { 
+      cachedPool = []; 
+    }
+    let globalCardPool = Array.isArray(cachedPool) ? cachedPool : [];
+
+    let currentTab = 'packs';
+    let currentPackCards = [];
+    let currentCardIdx = 0;
+    let selectedSetObj = null;
+    let selectedInspectedCard = null;
+    let searchResultsList = [];
+    let isOpeningPack = false;
+
+    // Touch Swipe Drag Tracking
+    let touchStartY = 0;
+    let touchEndY = 0;
+
+    // Master Pack Configuration
+    const MASTER_PACK = {
+      id: 'universal_master_pack',
+      name: 'Universal TCG Master Pack',
+      era: '1999 - 2026 (All Eras)',
+      price: 50,
+      coverArt: 'https://images.pokemontcg.io/sv3pt5/199_hires.png',
+      description: 'Contains every single card in Pokémon TCG history! Pull vintage grails, modern SIRs, gold cards, and ultra rares.'
+    };
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function switchTab(tabName) {
+      currentTab = tabName;
+      SoundEngine.playSlide();
+
+      // Hide content
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      const activeContent = document.getElementById(`tab-${tabName}`);
+      if (activeContent) activeContent.classList.remove('hidden');
+
+      // Update desktop buttons
+      document.querySelectorAll('.tab-btn-d').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-black');
+        btn.classList.add('glass-btn', 'text-neutral-400');
+      });
+      const activeBtnD = document.getElementById(`tab-btn-${tabName}-desktop`);
+      if (activeBtnD) {
+        activeBtnD.classList.add('bg-white', 'text-black');
+        activeBtnD.classList.remove('glass-btn', 'text-neutral-400');
+      }
+
+      // Update mobile buttons
+      document.querySelectorAll('.tab-btn-m').forEach(btn => {
+        btn.classList.remove('text-amber-400');
+        btn.classList.add('text-neutral-400');
+      });
+      const activeBtnM = document.getElementById(`tab-btn-${tabName}-mobile`);
+      if (activeBtnM) {
+        activeBtnM.classList.add('text-amber-400');
+        activeBtnM.classList.remove('text-neutral-400');
+      }
+
+      if (tabName === 'binder') renderBinder();
+    }
+
+    function showToast(msg) {
+      // Notifications disabled
+    }
+
+    function getCardPrice(card) {
+      if (card.tcgplayer && card.tcgplayer.prices) {
+        const p = card.tcgplayer.prices;
+        const tier = p.specialIllustration || p.secretRare || p.holofoil || p.unlimitedHolofoil || p.normal;
+        if (tier && (tier.market || tier.mid)) {
+          return Math.max(0.20, parseFloat((tier.market || tier.mid).toFixed(2)));
+        }
+      }
+      const r = (card.rarity || '').toLowerCase();
+      if (r.includes('hyper') || r.includes('gold')) return Math.floor(Math.random() * 80) + 70;
+      if (r.includes('special illustration') || r.includes('alt art')) return Math.floor(Math.random() * 120) + 50;
+      if (r.includes('illustration rare')) return Math.floor(Math.random() * 30) + 12;
+      if (r.includes('double rare') || r.includes('vmax') || r.includes('ex')) return Math.floor(Math.random() * 12) + 5;
+      if (r.includes('holo') || r.includes('rare')) return Math.floor(Math.random() * 4) + 1.50;
+      if (r.includes('uncommon')) return parseFloat((Math.random() * 0.8 + 0.4).toFixed(2));
+      return parseFloat((Math.random() * 0.4 + 0.15).toFixed(2));
+    }
+
+    function getFoilTypeByRarity(rarityStr) {
+      const r = (rarityStr || '').toLowerCase();
+      if (r.includes('gold') || r.includes('hyper rare')) return 'foil-gold';
+      if (r.includes('special illustration') || r.includes('sir')) return 'foil-sir';
+      if (r.includes('illustration rare') || r.includes('ir')) return 'foil-ir';
+      if (r.includes('reverse')) return 'foil-reverse';
+      if (r.includes('holo') || r.includes('ex') || r.includes('rare') || r.includes('v')) return 'foil-holo';
+      return '';
+    }
+
+    function saveState() {
+      localStorage.setItem('pokerips_coins', coins.toString());
+      localStorage.setItem('pokerips_binder', JSON.stringify(binder));
+      localStorage.setItem('pokerips_last_daily', lastDailyClaim.toString());
+      updateUIHeader();
+    }
+
+    // Retries fetching cards repeatedly from API if necessary
+    async function fetchCardPoolWithRetry(maxRetries = 6, updateStatusFn = null) {
+      let attempt = 0;
+      while (attempt < maxRetries) {
+        attempt++;
+        if (updateStatusFn) {
+          updateStatusFn(`Fetching real Pokémon cards... (Attempt ${attempt}/${maxRetries})`);
+        }
+        try {
+          const pageNum = Math.floor(Math.random() * 60) + 1;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 9000);
+          
+          const res = await fetch(`https://api.pokemontcg.io/v2/cards?pageSize=250&page=${pageNum}`, {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.data && data.data.length > 0) {
+              const existingIds = new Set(globalCardPool.map(c => c.id));
+              const newCards = data.data.filter(c => c && c.id && !existingIds.has(c.id));
+              globalCardPool = [...globalCardPool, ...newCards];
+              
+              // Persist card pool in localStorage for future offline/fast loading
+              try {
+                const poolToSave = globalCardPool.slice(0, 350).map(c => ({
+                  id: c.id,
+                  name: c.name,
+                  rarity: c.rarity,
+                  images: c.images,
+                  set: c.set,
+                  number: c.number,
+                  tcgplayer: c.tcgplayer
+                }));
+                localStorage.setItem('pokerips_card_pool', JSON.stringify(poolToSave));
+              } catch(e) {
+                console.warn('Could not save full card pool to localStorage:', e);
+              }
+              return true;
+            }
+          }
+        } catch(err) {
+          console.warn(`API attempt ${attempt} failed:`, err);
+        }
+
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 1200));
+        }
+      }
+      return false;
+    }
+
+    function populateBinderSetFilter() {
+      const select = document.getElementById('binder-filter-set');
+      if (!select) return;
+      const currentVal = select.value;
+      const sets = [...new Set(binder.map(c => c.setName || 'Master Set'))].sort();
+      select.innerHTML = '<option value="all">All Sets</option>' + 
+        sets.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+      select.value = sets.includes(currentVal) ? currentVal : 'all';
+    }
+
+    function updateUIHeader() {
+      document.getElementById('coins-display').textContent = coins.toLocaleString();
+      
+      document.querySelectorAll('.binder-count-badge').forEach(badge => {
+        badge.textContent = binder.length;
+      });
+      
+      const totalWorth = binder.reduce((sum, item) => sum + (item.marketPrice || 0), 0);
+      document.getElementById('portfolio-value-display').textContent = `$${totalWorth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      
+      populateBinderSetFilter();
+    }
+
+    function openDailyWheelModal() {
+      const modal = document.getElementById('daily-wheel-modal');
+      const claimBtn = document.getElementById('claim-daily-btn');
+      const now = Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+
+      if (now - lastDailyClaim < oneDayMs) {
+        const remainingHours = Math.ceil((oneDayMs - (now - lastDailyClaim)) / (1000 * 60 * 60));
+        claimBtn.disabled = true;
+        claimBtn.className = "w-full bg-neutral-800 text-neutral-500 font-bold py-3 rounded-xl text-xs cursor-not-allowed min-h-[44px]";
+        claimBtn.innerHTML = `<i class="fa-solid fa-clock"></i> CLAIMED (${remainingHours}h remaining)`;
+      } else {
+        claimBtn.disabled = false;
+        claimBtn.className = "w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-3 rounded-xl text-xs transition shadow-xl active:scale-95 flex items-center justify-center gap-2 min-h-[44px]";
+        claimBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> CLAIM BONUS NOW`;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeDailyWheelModal() {
+      document.getElementById('daily-wheel-modal').classList.add('hidden');
+    }
+
+    function claimDailyBonus() {
+      coins += 250;
+      lastDailyClaim = Date.now();
+      saveState();
+      SoundEngine.playCoin();
+      if (window.confetti) confetti({ particleCount: 50, spread: 50 });
+      showToast("Claimed +250 PokéCoins Daily Bonus!");
+      closeDailyWheelModal();
+    }
+
+    function openAddCoinsModal() {
+      document.getElementById('coins-modal').classList.remove('hidden');
+    }
+
+    function closeAddCoinsModal() {
+      document.getElementById('coins-modal').classList.add('hidden');
+      document.getElementById('custom-coins-input').value = '';
+    }
+
+    function addCustomCoins(amount) {
+      if (isNaN(amount) || amount <= 0) return;
+      coins += amount;
+      saveState();
+      SoundEngine.playCoin();
+      showToast(`Added ${amount.toLocaleString()} PokéCoins!`);
+      closeAddCoinsModal();
+    }
+
+    function addCustomCoinsFromInput() {
+      const val = parseInt(document.getElementById('custom-coins-input').value);
+      if (isNaN(val) || val <= 0) {
+        showToast("Please enter a valid amount.");
+        return;
+      }
+      addCustomCoins(val);
+    }
+
+    function setCustomCoinsFromInput() {
+      const val = parseInt(document.getElementById('custom-coins-input').value);
+      if (isNaN(val) || val < 0) {
+        showToast("Please enter a valid amount.");
+        return;
+      }
+      coins = val;
+      saveState();
+      SoundEngine.playCoin();
+      showToast(`Balance set to ${val.toLocaleString()} PokéCoins!`);
+      closeAddCoinsModal();
+    }
+
+    function renderPackStore() {
+      const container = document.getElementById('featured-sets-grid');
+      container.innerHTML = `
+        <div class="glass-panel rounded-3xl p-4 sm:p-6 flex flex-col md:flex-row gap-5 items-center shadow-2xl relative overflow-hidden border border-white/15">
+          <div class="w-full max-w-[240px] md:w-56 shrink-0">
+            <div class="pack-3d-wrap w-full h-72 cursor-pointer" onclick="buyPack('universal_master_pack')">
+              <div class="pack-3d w-full h-full rounded-2xl overflow-hidden glass-card relative border border-amber-400/40 bg-gradient-to-b from-neutral-900 via-neutral-950 to-black flex flex-col justify-between shadow-2xl">
+                
+                <div class="pack-crimp-top h-6 w-full border-b border-white/20 flex items-center justify-between px-2 relative z-20">
+                  <span class="text-[7px] font-black text-amber-300 uppercase tracking-widest relative z-10">MASTER BOOSTER</span>
+                  <div class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] relative z-10"></div>
+                </div>
+
+                <div class="relative flex-1 w-full flex flex-col justify-between p-2.5 overflow-hidden">
+                  <div class="absolute inset-0 bg-cover bg-center opacity-40 scale-105" style="background-image: url('${MASTER_PACK.coverArt}'); filter: blur(2px);"></div>
+                  <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/90"></div>
+
+                  <div class="relative z-10 text-center pt-0.5">
+                    <span class="text-[7px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/30">
+                      ALL TCG ERAS
+                    </span>
+                    <h3 class="text-sm sm:text-base font-black text-white tracking-tight mt-1 leading-tight drop-shadow">
+                      ${MASTER_PACK.name}
+                    </h3>
+                  </div>
+
+                  <div class="relative z-10 my-auto flex justify-center py-1">
+                    <img src="${MASTER_PACK.coverArt}" alt="Master Pack" class="h-32 object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)]" />
+                  </div>
+
+                  <div class="relative z-10 text-center pb-0.5">
+                    <span class="text-[7px] font-extrabold text-neutral-300 tracking-wider uppercase bg-black/60 px-2 py-0.5 rounded-full border border-white/10">
+                      10 POKÉMON CARDS
+                    </span>
+                  </div>
+                </div>
+
+                <div class="pack-crimp-bottom h-5 w-full border-t border-white/20 flex items-center justify-center relative z-20">
+                  <span class="text-[7px] font-black text-white/70 tracking-widest uppercase relative z-10">OFFICIAL TCG ODDS</span>
+                </div>
+
+                <div class="foil-overlay foil-sir opacity-75"></div>
+                <div class="card-glare"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex-1 text-center md:text-left space-y-3 w-full">
+            <div>
+              <div class="flex flex-wrap items-center justify-center md:justify-start gap-1.5 mb-1.5">
+                <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
+                  <i class="fa-solid fa-bolt"></i> Single Booster
+                </span>
+                <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-white/10 text-neutral-300 border border-white/10">
+                  1999–2026
+                </span>
+              </div>
+              <h3 class="text-base sm:text-xl font-black text-white tracking-tight">The Pokémon Master Booster Pack</h3>
+              <p class="text-xs text-neutral-400 mt-1">
+                Rip open a booster containing genuine cards dynamically pulled from every official Pokémon TCG set!
+              </p>
+            </div>
+
+            <div class="glass-card rounded-xl p-3 border border-white/10 space-y-1.5 text-left">
+              <div class="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1 flex justify-between items-center">
+                <span>Pack Hit Probabilities</span>
+                <span class="text-amber-300">10 Cards / Pack</span>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
+                  <span class="text-neutral-300">Commons</span>
+                  <span class="font-bold text-white">4x (100%)</span>
+                </div>
+                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
+                  <span class="text-neutral-300">Uncommons</span>
+                  <span class="font-bold text-white">3x (100%)</span>
+                </div>
+                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
+                  <span class="text-neutral-300">Reverse Holo</span>
+                  <span class="font-bold text-white">1x (100%)</span>
+                </div>
+                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
+                  <span class="text-neutral-300">Rare / Holo</span>
+                  <span class="font-bold text-white">70.0%</span>
+                </div>
+                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
+                  <span class="text-neutral-300">Double Rare / EX</span>
+                  <span class="font-bold text-white">18.0%</span>
+                </div>
+                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
+                  <span class="text-amber-300 font-bold">Special Illus. Rare</span>
+                  <span class="font-bold text-amber-300">4.0%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 pt-1">
+              <div class="text-left">
+                <div class="text-[8px] text-neutral-400 uppercase font-black tracking-widest">Price</div>
+                <div class="text-base font-black text-amber-400 flex items-center gap-1"><i class="fa-solid fa-coins"></i> 50</div>
+              </div>
+              <button
+                onclick="buyPack('universal_master_pack')"
+                class="flex-1 sm:flex-initial bg-amber-400 hover:bg-amber-300 text-black font-black px-6 py-3 rounded-xl text-xs transition active:scale-95 shadow-xl flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <i class="fa-solid fa-scissors"></i> RIP MASTER PACK (<i class="fa-solid fa-coins"></i> 50)
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      init3DHoverPhysics();
+    }
+
+    function formatCardObj(card, setName = 'Master TCG Collection') {
+      const price = getCardPrice(card);
+      return {
+        id: card.id || 'card-' + Math.random().toString(36).substring(2, 9),
+        uniqueId: 'card-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+        name: card.name || 'Unknown Pokémon',
+        rarity: card.rarity || 'Common',
+        image: card.images?.large || card.images?.small || 'https://images.pokemontcg.io/cardback.png',
+        number: card.number || '000',
+        setName: card.set?.name || setName,
+        marketPrice: price,
+        obtainedAt: Date.now()
+      };
+    }
+
+    function assembleRealisticPack(fetchedCards, setName = 'Universal Master Set') {
+      const commons = [];
+      const uncommons = [];
+      const rares = [];
+      const doubleRares = [];
+      const irs = [];
+      const sirs = [];
+      const golds = [];
+
+      fetchedCards.forEach(c => {
+        const r = (c.rarity || '').toLowerCase();
+        if (r.includes('gold') || r.includes('hyper rare')) golds.push(c);
+        else if (r.includes('special illustration') || r.includes('sir')) sirs.push(c);
+        else if (r.includes('illustration rare') || r.includes('ir')) irs.push(c);
+        else if (r.includes('double rare') || r.includes('vmax') || r.includes('ex') || r.includes('vstar')) doubleRares.push(c);
+        else if (r.includes('rare') || r.includes('holo')) rares.push(c);
+        else if (r.includes('uncommon')) uncommons.push(c);
+        else commons.push(c);
+      });
+
+      const getRandom = (arr, fallbackArr) => {
+        const list = (arr && arr.length > 0) ? arr : (fallbackArr && fallbackArr.length > 0 ? fallbackArr : fetchedCards);
+        return list[Math.floor(Math.random() * list.length)];
+      };
+
+      const pack = [];
+
+      for (let i = 0; i < 4; i++) pack.push(formatCardObj(getRandom(commons, fetchedCards), setName));
+      for (let i = 0; i < 3; i++) pack.push(formatCardObj(getRandom(uncommons, fetchedCards), setName));
+
+      const revCard = formatCardObj(getRandom(commons.concat(uncommons), fetchedCards), setName);
+      revCard.rarity = 'Reverse Holo';
+      pack.push(revCard);
+
+      const roll = Math.random() * 100;
+      let hitCard;
+      if (roll < 1.0 && golds.length > 0) hitCard = getRandom(golds, fetchedCards);
+      else if (roll < 5.0 && sirs.length > 0) hitCard = getRandom(sirs, fetchedCards);
+      else if (roll < 12.0 && irs.length > 0) hitCard = getRandom(irs, fetchedCards);
+      else if (roll < 30.0 && doubleRares.length > 0) hitCard = getRandom(doubleRares, fetchedCards);
+      else hitCard = getRandom(rares, fetchedCards);
+
+      pack.push(formatCardObj(hitCard, setName));
+      pack.push(formatCardObj(getRandom(commons, fetchedCards), setName));
+
+      return pack;
+    }
+
+    async function buyPack(setId) {
+      const setObj = MASTER_PACK;
+
+      if (coins < setObj.price) {
+        showToast("Not enough PokéCoins! Click 'Add Coins' to top up.");
+        return;
+      }
+
+      selectedSetObj = setObj;
+      isOpeningPack = false;
+
+      document.getElementById('pack-overlay').classList.remove('hidden');
+      document.getElementById('pack-loading').classList.remove('hidden');
+      document.getElementById('pack-sealed-container').classList.add('hidden');
+      document.getElementById('pack-cards-container').classList.add('hidden');
+
+      const statusEl = document.getElementById('pack-loading-status');
+      const updateStatus = (msg) => {
+        if (statusEl) statusEl.textContent = msg;
+      };
+
+      if (globalCardPool.length < 20) {
+        updateStatus("Connecting to Pokémon TCG API...");
+        const success = await fetchCardPoolWithRetry(6, updateStatus);
+        
+        if (!success && globalCardPool.length === 0) {
+          document.getElementById('pack-loading').classList.add('hidden');
+          document.getElementById('pack-overlay').classList.add('hidden');
+          showToast("Failed to fetch cards. Please check connection and try again.");
+          return;
+        }
+      }
+
+      // Deduct coins only when pack is successfully created
+      coins -= setObj.price;
+      saveState();
+
+      currentPackCards = assembleRealisticPack(globalCardPool, 'Universal Master Set');
+
+      const topCrimp = document.getElementById('pack-top-crimp');
+      topCrimp.classList.remove('peel-off-top');
+      const packInner = document.getElementById('sealed-pack-inner');
+      packInner.classList.remove('animate-pack-shake');
+
+      document.getElementById('pack-loading').classList.add('hidden');
+      document.getElementById('sealed-pack-title').textContent = setObj.name;
+      document.getElementById('sealed-pack-era').textContent = setObj.era;
+      document.getElementById('sealed-pack-art-img').src = setObj.coverArt;
+      document.getElementById('sealed-pack-bg').style.backgroundImage = `url('${setObj.coverArt}')`;
+      document.getElementById('pack-sealed-container').classList.remove('hidden');
+
+      init3DHoverPhysics();
+    }
+
+    function handlePackTearClick() {
+      if (isOpeningPack) return;
+      isOpeningPack = true;
+
+      SoundEngine.playTear();
+
+      const topCrimp = document.getElementById('pack-top-crimp');
+      const packInner = document.getElementById('sealed-pack-inner');
+
+      packInner.classList.add('animate-pack-shake');
+
+      setTimeout(() => {
+        topCrimp.classList.add('peel-off-top');
+        setTimeout(() => {
+          document.getElementById('pack-sealed-container').classList.add('hidden');
+          document.getElementById('pack-cards-container').classList.remove('hidden');
+          currentCardIdx = 0;
+          displayCurrentRevealCard();
+          isOpeningPack = false;
+        }, 450);
+      }, 350);
+    }
+
+    function handleCardClick() {
+      vaultCurrentCard();
+    }
+
+    function displayCurrentRevealCard() {
+      const card = currentPackCards[currentCardIdx];
+      if (!card) return;
+
+      document.getElementById('card-counter-badge').textContent = `Card ${currentCardIdx + 1} of ${currentPackCards.length}`;
+      document.getElementById('reveal-card-img').src = card.image;
+      document.getElementById('reveal-card-name').textContent = card.name;
+      document.getElementById('reveal-card-rarity').textContent = card.rarity;
+      document.getElementById('reveal-card-price').textContent = `$${card.marketPrice.toFixed(2)}`;
+      document.getElementById('rip-coin-value').innerHTML = `+<i class="fa-solid fa-coins text-amber-400"></i> ${Math.max(1, Math.round(card.marketPrice * 2))}`;
+
+      const foilOverlay = document.getElementById('reveal-foil-overlay');
+      foilOverlay.className = `foil-overlay ${getFoilTypeByRarity(card.rarity)}`;
+
+      const viewport = document.getElementById('card-reveal-viewport');
+      if (card.rarity.includes('Special Illustration') || card.rarity.includes('Hyper Rare')) {
+        viewport.classList.add('rare-border-glow');
+        SoundEngine.playRareHit();
+        if (window.confetti) confetti({ particleCount: 40, spread: 50 });
+      } else {
+        viewport.classList.remove('rare-border-glow');
+        SoundEngine.playSnap();
+      }
+
+      init3DHoverPhysics();
+    }
+
+    function slideTopCard() {
+      SoundEngine.playSlide();
+      const cardEl = document.getElementById('holo-card-element');
+      cardEl.classList.add('card-slide-off');
+
+      setTimeout(() => {
+        cardEl.classList.remove('card-slide-off');
+        nextRevealCard();
+      }, 220);
+    }
+
+    function nextRevealCard() {
+      currentCardIdx++;
+      if (currentCardIdx >= currentPackCards.length) {
+        showToast("Pack completely opened!");
+        document.getElementById('pack-overlay').classList.add('hidden');
+        renderBinder();
+        return;
+      }
+      displayCurrentRevealCard();
+    }
+
+    function ripCurrentCard(e) {
+      if (e) e.stopPropagation();
+      const card = currentPackCards[currentCardIdx];
+      if (!card) return;
+
+      const gain = Math.max(1, Math.round(card.marketPrice * 2));
+      coins += gain;
+      saveState();
+      SoundEngine.playCoin();
+      showToast(`Ripped ${card.name} for +${gain} PokéCoins!`);
+
+      slideTopCard();
+    }
+
+    function vaultCurrentCard(e) {
+      if (e) e.stopPropagation();
+      const card = currentPackCards[currentCardIdx];
+      if (!card) return;
+
+      binder.push(card);
+      saveState();
+      SoundEngine.playSnap();
+      showToast(`Vaulted ${card.name} to Binder!`);
+
+      slideTopCard();
+    }
+
+    function vaultAllRemainingCards() {
+      let added = 0;
+      for (let i = currentCardIdx; i < currentPackCards.length; i++) {
+        binder.push(currentPackCards[i]);
+        added++;
+      }
+      saveState();
+      SoundEngine.playSnap();
+      showToast(`Vaulted ${added} remaining cards!`);
+      document.getElementById('pack-overlay').classList.add('hidden');
+      renderBinder();
+    }
+
+    function renderBinder() {
+      const grid = document.getElementById('binder-grid');
+      if (!grid) return;
+
+      const setFilter = document.getElementById('binder-filter-set')?.value || 'all';
+      const sortOption = document.getElementById('binder-sort-select')?.value || 'value-desc';
+
+      let filtered = [...binder];
+      if (setFilter !== 'all') {
+        filtered = filtered.filter(c => c.setName === setFilter);
+      }
+
+      filtered.sort((a, b) => {
+        const valA = a.marketPrice || 0;
+        const valB = b.marketPrice || 0;
+        if (sortOption === 'value-desc') return valB - valA;
+        if (sortOption === 'value-asc') return valA - valB;
+        if (sortOption === 'recent') return (b.obtainedAt || 0) - (a.obtainedAt || 0);
+        if (sortOption === 'name') return (a.name || '').localeCompare(b.name || '');
+        return 0;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 text-neutral-400">
+            <i class="fa-solid fa-box-open text-3xl mb-2"></i>
+            <p class="text-sm font-bold">No cards in your binder yet.</p>
+            <p class="text-xs">Rip some packs from the Booster Store to build your collection!</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(card => {
+        const foilClass = getFoilTypeByRarity(card.rarity);
+        const effVal = (card.marketPrice || 0).toFixed(2);
+        return `
+          <div class="card-3d-wrap cursor-pointer" onclick="openInspectModal('${card.uniqueId}')">
+            <div class="card-3d glass-card rounded-xl overflow-hidden relative border border-white/10 p-2 group hover:border-white/30 transition">
+              <div class="aspect-[3/4] relative rounded-lg overflow-hidden bg-black mb-1.5">
+                <img src="${card.image}" alt="${escapeHtml(card.name)}" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+                <div class="foil-overlay ${foilClass}"></div>
+                <div class="card-glare"></div>
+              </div>
+              <div class="text-left">
+                <div class="text-[11px] font-black text-white truncate leading-tight">${escapeHtml(card.name)}</div>
+                <div class="text-[8px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(card.rarity || 'Common')}</div>
+                <div class="text-xs font-black text-amber-400 mt-0.5">$${effVal}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      init3DHoverPhysics();
+    }
+
+    function openInspectModal(uniqueId) {
+      const card = binder.find(c => c.uniqueId === uniqueId);
+      if (!card) return;
+
+      selectedInspectedCard = card;
+
+      document.getElementById('inspect-card-img').src = card.image;
+      document.getElementById('inspect-card-name').textContent = card.name;
+      document.getElementById('inspect-card-rarity').textContent = card.rarity || 'Common';
+      document.getElementById('inspect-card-set').textContent = `${card.setName || 'Master Set'} • #${card.number || '000'}`;
+
+      const effVal = (card.marketPrice || 0).toFixed(2);
+      document.getElementById('inspect-card-value').textContent = `$${effVal}`;
+
+      const inspectWrapper = document.getElementById('inspect-slab-wrapper');
+      if (inspectWrapper) {
+        inspectWrapper.style.setProperty('--pointer-x', '50');
+        inspectWrapper.style.setProperty('--pointer-y', '50');
+      }
+
+      const foilOverlay = document.getElementById('inspect-foil-overlay');
+      foilOverlay.className = `foil-overlay ${getFoilTypeByRarity(card.rarity)}`;
+
+      const sellVal = Math.max(1, Math.round((card.marketPrice || 0) * 2));
+      document.getElementById('inspect-sell-btn').innerHTML = `<i class="fa-solid fa-fire text-amber-400 mr-1"></i> Sell for <i class="fa-solid fa-coins text-amber-400 mx-1"></i> ${sellVal.toLocaleString()} PokéCoins`;
+
+      document.getElementById('inspect-modal').classList.remove('hidden');
+      init3DHoverPhysics();
+    }
+
+    function closeInspectModal() {
+      document.getElementById('inspect-modal').classList.add('hidden');
+      selectedInspectedCard = null;
+    }
+
+    function sellInspectedCard() {
+      if (!selectedInspectedCard) return;
+      const card = selectedInspectedCard;
+      const saleVal = Math.max(1, Math.round((card.marketPrice || 0) * 2));
+
+      coins += saleVal;
+      binder = binder.filter(c => c.uniqueId !== card.uniqueId);
+      saveState();
+
+      SoundEngine.playCoin();
+      showToast(`Sold ${card.name} for ${saleVal.toLocaleString()} PokéCoins!`);
+      closeInspectModal();
+      renderBinder();
+    }
+
+    async function handleSearch(e) {
+      if (e) e.preventDefault();
+      const query = document.getElementById('search-input').value.trim();
+      if (!query) return;
+
+      const resultsGrid = document.getElementById('search-results-grid');
+      const header = document.getElementById('search-results-header');
+      header.classList.add('hidden');
+
+      resultsGrid.innerHTML = `
+        <div class="col-span-full text-center py-12">
+          <i class="fa-solid fa-spinner text-3xl text-amber-400 animate-spin mb-3"></i>
+          <p class="text-xs text-neutral-400">Searching global Pokémon TCG database for "${escapeHtml(query)}"...</p>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"*${encodeURIComponent(query)}*"&pageSize=30`);
+        const data = await res.json();
+        if (data.data && data.data.length > 0) {
+          searchResultsList = data.data;
+          renderSearchResults(data.data);
+        } else {
+          resultsGrid.innerHTML = `
+            <div class="col-span-full text-center py-12 text-neutral-400">
+              <i class="fa-solid fa-magnifying-glass text-3xl mb-2"></i>
+              <p class="text-xs font-bold text-white">No cards found matching "${escapeHtml(query)}"</p>
+            </div>
+          `;
+        }
+      } catch(err) {
+        resultsGrid.innerHTML = `
+          <div class="col-span-full text-center py-12 text-neutral-400">
+            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 text-amber-400"></i>
+            <p class="text-xs font-bold text-white">Search failed. Check your internet connection.</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderSearchResults(cards) {
+      const header = document.getElementById('search-results-header');
+      const countTitle = document.getElementById('search-count-title');
+      const resultsGrid = document.getElementById('search-results-grid');
+
+      header.classList.remove('hidden');
+      countTitle.textContent = `Found ${cards.length} Pokémon Cards`;
+
+      resultsGrid.innerHTML = cards.map(card => {
+        const price = getCardPrice(card);
+        const cardImg = card.images?.large || card.images?.small || 'https://images.pokemontcg.io/cardback.png';
+        return `
+          <div class="glass-card rounded-xl p-2 border border-white/10 flex flex-col justify-between">
+            <div class="aspect-[3/4] relative rounded-lg overflow-hidden bg-black mb-1.5">
+              <img src="${cardImg}" alt="${escapeHtml(card.name)}" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+            </div>
+            <div class="text-left mb-2">
+              <div class="text-[11px] font-black text-white truncate leading-tight">${escapeHtml(card.name)}</div>
+              <div class="text-[8px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(card.rarity || 'Common')}</div>
+              <div class="text-xs font-black text-amber-400 mt-0.5">$${price.toFixed(2)}</div>
+            </div>
+            <button
+              onclick="addSearchCardToBinder('${card.id}')"
+              class="w-full bg-white hover:bg-neutral-200 text-black font-extrabold py-1.5 rounded-lg text-[10px] transition active:scale-95 shadow min-h-[34px]"
+            >
+              + Vault Card
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addSearchCardToBinder(cardId) {
+      const card = searchResultsList.find(c => c.id === cardId);
+      if (!card) return;
+
+      const formatted = formatCardObj(card, card.set?.name || 'Master Set');
+      binder.push(formatted);
+      saveState();
+      SoundEngine.playSnap();
+      showToast(`Added ${formatted.name} to your Binder!`);
+    }
+
+    // 3D Gyro/Mouse Hover Physics
+    function init3DHoverPhysics() {
+      const elements = document.querySelectorAll('.card-3d-wrap, .pack-3d-wrap');
+
+      elements.forEach(wrap => {
+        const card = wrap.querySelector('.card-3d, .pack-3d');
+        if (!card) return;
+
+        const handleMove = (x, y, rect) => {
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+
+          const mouseX = x - centerX;
+          const mouseY = y - centerY;
+
+          const rotateX = (mouseY / (rect.height / 2)) * -18;
+          const rotateY = (mouseX / (rect.width / 2)) * 18;
+
+          const pointerX = ((x - rect.left) / rect.width) * 100;
+          const pointerY = ((y - rect.top) / rect.height) * 100;
+
+          card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+          card.style.setProperty('--pointer-x', `${pointerX}%`);
+          card.style.setProperty('--pointer-y', `${pointerY}%`);
+        };
+
+        wrap.onmousemove = (e) => {
+          const rect = wrap.getBoundingClientRect();
+          handleMove(e.clientX, e.clientY, rect);
+        };
+
+        wrap.ontouchmove = (e) => {
+          if (e.touches && e.touches[0]) {
+            const rect = wrap.getBoundingClientRect();
+            handleMove(e.touches[0].clientX, e.touches[0].clientY, rect);
+          }
+        };
+
+        const resetTilt = () => {
+          card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+          card.style.setProperty('--pointer-x', '50%');
+          card.style.setProperty('--pointer-y', '50%');
+        };
+
+        wrap.onmouseleave = resetTilt;
+        wrap.ontouchend = resetTilt;
+      });
+    }
+
+    // Touch Swipe Drag Support for Card Reveals
+    function setupTouchSwipe() {
+      const viewport = document.getElementById('card-reveal-viewport');
+      if (!viewport) return;
+
+      viewport.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches[0]) {
+          touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      viewport.addEventListener('touchend', (e) => {
+        if (e.changedTouches && e.changedTouches[0]) {
+          touchEndY = e.changedTouches[0].clientY;
+          if (touchStartY - touchEndY > 40) {
+            slideTopCard();
+          }
+        }
+      }, { passive: true });
+    }
+
+    // Initialization on load
+    window.onload = function() {
+      updateUIHeader();
+      renderPackStore();
+      setupTouchSwipe();
+
+      // Pre-fetch cards in background if pool is small
+      if (globalCardPool.length < 40) {
+        fetchCardPoolWithRetry(3, null);
+      }
+    };
+  </script>
+</body>
+</html>
