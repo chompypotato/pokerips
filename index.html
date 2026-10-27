@@ -172,6 +172,11 @@
       mix-blend-mode: soft-light;
     }
 
+    /* Standard TCG Card Aspect Ratio (63mm x 88mm) */
+    .card-aspect {
+      aspect-ratio: 63 / 88;
+    }
+
     /* Sealed Booster Pack Custom Crimp Edges */
     .pack-crimp-top {
       background: linear-gradient(180deg, #1f1f1f 0%, #3a3a3a 50%, #171717 100%);
@@ -255,13 +260,13 @@
     }
   </style>
 </head>
-<body class="min-h-screen custom-scrollbar pb-24 md:pb-12">
+<body class="min-h-screen custom-scrollbar pb-20 md:pb-12">
 
-  <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-6 min-h-screen flex flex-col">
+  <div class="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-6 min-h-screen flex flex-col">
     <!-- Header -->
-    <header class="glass-panel rounded-2xl p-3 sm:p-4 mb-3 sm:mb-6 shadow-2xl flex flex-col gap-3">
+    <header class="glass-panel rounded-2xl p-2.5 sm:p-4 mb-2.5 sm:mb-6 shadow-2xl flex flex-col gap-2.5">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2">
           <div class="w-9 h-9 sm:w-10 sm:h-10 bg-amber-400 text-black rounded-xl flex items-center justify-center text-lg font-black shadow-lg shrink-0">
             <i class="fa-solid fa-layer-group"></i>
           </div>
@@ -288,27 +293,27 @@
             class="bg-amber-400 hover:bg-amber-300 text-black font-black px-2.5 py-2 rounded-xl text-xs flex items-center gap-1 shadow active:scale-95 transition min-h-[40px]"
           >
             <i class="fa-solid fa-circle-plus text-sm"></i>
-            <span class="hidden sm:inline">Add Coins</span>
+            <span class="hidden sm:inline">Add Cash</span>
           </button>
         </div>
       </div>
 
       <!-- Portfolio & Balance Bar -->
       <div class="grid grid-cols-2 gap-2">
-        <div class="glass-btn rounded-xl px-3 py-2 flex items-center justify-between">
-          <div class="flex items-center gap-2">
+        <div class="glass-btn rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
             <i class="fa-solid fa-chart-line text-neutral-400 text-xs"></i>
             <span class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-widest">Portfolio</span>
           </div>
           <div id="portfolio-value-display" class="text-xs sm:text-sm font-black text-white">$0.00</div>
         </div>
 
-        <div class="glass-btn rounded-xl px-3 py-2 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-coins text-amber-400 text-xs"></i>
-            <span class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-widest">Coins</span>
+        <div class="glass-btn rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-sack-dollar text-amber-400 text-xs"></i>
+            <span class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-widest">Cash Balance</span>
           </div>
-          <div id="coins-display" class="text-xs sm:text-sm font-black text-amber-400">500</div>
+          <div id="coins-display" class="text-xs sm:text-sm font-black text-amber-400">$100.00</div>
         </div>
       </div>
     </header>
@@ -339,16 +344,16 @@
 
     <!-- TAB 2: MY BINDER -->
     <div id="tab-binder" class="tab-content hidden">
-      <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div class="mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
-          <h2 class="text-lg sm:text-xl font-black text-white tracking-tight">Vaulted Card Binder</h2>
+          <h2 class="text-base sm:text-xl font-black text-white tracking-tight">Vaulted Card Binder</h2>
           <p class="text-xs text-neutral-400">Your card collection with live market values.</p>
         </div>
         <div class="flex gap-2 w-full sm:w-auto">
-          <select id="binder-filter-set" onchange="renderBinder()" class="flex-1 sm:flex-none glass-btn text-xs text-neutral-200 rounded-xl px-3 py-2.5 focus:outline-none border border-white/10 min-h-[42px]">
+          <select id="binder-filter-set" onchange="renderBinder()" class="flex-1 sm:flex-none glass-btn text-xs text-neutral-200 rounded-xl px-2.5 py-2 focus:outline-none border border-white/10 min-h-[40px]">
             <option value="all">All Sets</option>
           </select>
-          <select id="binder-sort-select" onchange="renderBinder()" class="flex-1 sm:flex-none glass-btn text-xs text-neutral-200 rounded-xl px-3 py-2.5 focus:outline-none border border-white/10 min-h-[42px]">
+          <select id="binder-sort-select" onchange="renderBinder()" class="flex-1 sm:flex-none glass-btn text-xs text-neutral-200 rounded-xl px-2.5 py-2 focus:outline-none border border-white/10 min-h-[40px]">
             <option value="value-desc">Highest Value</option>
             <option value="value-asc">Lowest Value</option>
             <option value="recent">Most Recent</option>
@@ -356,12 +361,12 @@
           </select>
         </div>
       </div>
-      <div id="binder-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-4"></div>
+      <div id="binder-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4"></div>
     </div>
 
     <!-- TAB 3: SEARCH ALL CARDS -->
     <div id="tab-search" class="tab-content hidden">
-      <div class="max-w-xl mx-auto mb-4 sm:mb-6">
+      <div class="max-w-xl mx-auto mb-3 sm:mb-6">
         <form onsubmit="handleSearch(event)" class="flex gap-2">
           <input
             id="search-input"
@@ -378,11 +383,11 @@
         </form>
       </div>
 
-      <div id="search-results-header" class="hidden flex justify-between items-center mb-3">
+      <div id="search-results-header" class="hidden flex justify-between items-center mb-2.5">
         <h3 id="search-count-title" class="text-xs sm:text-sm font-bold text-white">Found Pokémon Cards</h3>
       </div>
 
-      <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3"></div>
+      <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3"></div>
     </div>
   </div>
 
@@ -485,8 +490,8 @@
     </div>
 
     <!-- 10-CARD STACK REVEAL VIEWPORT -->
-    <div id="pack-cards-container" class="max-w-sm w-full text-center hidden flex flex-col items-center my-auto">
-      <div class="w-full flex justify-between items-center mb-2 px-1">
+    <div id="pack-cards-container" class="max-w-md w-full text-center hidden flex flex-col items-center my-auto px-1">
+      <div class="w-full flex justify-between items-center mb-1.5 px-1">
         <span id="card-counter-badge" class="text-xs font-bold text-neutral-300 tracking-widest uppercase">
           Card 1 of 10
         </span>
@@ -499,9 +504,8 @@
       </div>
 
       <!-- Card Container Stack -->
-      <div 
-        id="card-reveal-viewport"
-        class="w-60 sm:w-68 aspect-[3/4] max-h-[52vh] relative rounded-2xl card-3d-wrap cursor-pointer my-2"
+      <div id="card-reveal-viewport"
+        class="w-[86vw] sm:w-[320px] card-aspect max-h-[64vh] relative rounded-2xl card-3d-wrap cursor-pointer my-1.5"
         onclick="handleCardClick()"
       >
         <div id="holo-card-element" class="w-full h-full card-3d relative rounded-2xl overflow-hidden shadow-2xl bg-neutral-950 border border-white/15">
@@ -524,17 +528,17 @@
         </div>
       </div>
 
-      <div class="text-[10px] text-neutral-400 my-1.5 font-semibold tracking-wider flex items-center justify-center gap-1">
+      <div class="text-[10px] text-neutral-400 my-1 font-semibold tracking-wider flex items-center justify-center gap-1">
         <i class="fa-solid fa-hand-pointer text-amber-400"></i> Tap card or swipe up to auto-vault
       </div>
 
-      <div class="flex items-center gap-2 w-full max-w-[280px] mt-2">
+      <div class="flex items-center gap-2 w-full max-w-[340px] mt-1.5">
         <button
           onclick="ripCurrentCard(event)"
           class="flex-1 glass-btn hover:bg-neutral-900 text-white border border-white/15 font-black py-2.5 rounded-xl text-xs transition active:scale-95 flex flex-col items-center justify-center shadow min-h-[46px]"
         >
-          <span class="flex items-center gap-1"><i class="fa-solid fa-fire text-amber-400"></i> SELL (RIP)</span>
-          <span id="rip-coin-value" class="text-[9px] text-amber-400 font-bold flex items-center gap-0.5">+<i class="fa-solid fa-coins text-amber-400"></i> 290</span>
+          <span class="flex items-center gap-1"><i class="fa-solid fa-fire text-amber-400"></i> SELL CARD</span>
+          <span id="rip-coin-value" class="text-[9px] text-amber-400 font-bold flex items-center gap-0.5">+$10.00</span>
         </button>
 
         <button
@@ -549,14 +553,14 @@
   </div>
 
   <!-- INSPECT CARD MODAL -->
-  <div id="inspect-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4 overflow-y-auto">
-    <div class="glass-panel rounded-2xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 relative border border-white/15 shadow-2xl my-auto">
+  <div id="inspect-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div class="glass-panel rounded-2xl max-w-sm sm:max-w-md w-full p-3.5 sm:p-6 relative border border-white/15 shadow-2xl my-auto">
       <button onclick="closeInspectModal()" class="absolute top-3 right-3 text-neutral-400 hover:text-white text-base w-8 h-8 flex items-center justify-center">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
       <div class="flex flex-col items-center text-center">
-        <div id="inspect-card-viewport" class="w-44 sm:w-52 aspect-[3/4] relative card-3d-wrap active-foil mb-4">
+        <div id="inspect-card-viewport" class="w-[72vw] max-w-[270px] card-aspect relative card-3d-wrap active-foil mb-3">
           <div id="inspect-slab-wrapper" class="w-full h-full card-3d relative rounded-xl overflow-hidden border border-white/20">
             <img id="inspect-card-img" src="" alt="Card" class="w-full h-full object-contain bg-black" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
             <div id="inspect-foil-overlay" class="foil-overlay"></div>
@@ -568,10 +572,10 @@
           <span id="inspect-card-rarity" class="text-[9px] font-extrabold uppercase tracking-widest bg-white/10 text-neutral-200 px-2.5 py-0.5 rounded-full border border-white/15">
             Special Illustration Rare
           </span>
-          <h3 id="inspect-card-name" class="text-base sm:text-lg font-black text-white mt-2 tracking-tight truncate">Charizard ex</h3>
-          <p id="inspect-card-set" class="text-xs text-neutral-400 mb-3 truncate">Scarlet & Violet 151 • #199</p>
+          <h3 id="inspect-card-name" class="text-base sm:text-lg font-black text-white mt-1.5 tracking-tight truncate">Charizard ex</h3>
+          <p id="inspect-card-set" class="text-xs text-neutral-400 mb-2.5 truncate">Scarlet & Violet 151 • #199</p>
 
-          <div class="glass-btn p-2.5 rounded-xl border border-white/10 mb-4 flex justify-between items-center">
+          <div class="glass-btn p-2 rounded-xl border border-white/10 mb-3 flex justify-between items-center">
             <span class="text-[10px] text-neutral-400 uppercase font-black tracking-widest">Market Value</span>
             <span id="inspect-card-value" class="text-base font-black text-amber-400">$145.00</span>
           </div>
@@ -581,7 +585,7 @@
             onclick="sellInspectedCard()"
             class="w-full glass-btn hover:bg-white hover:text-black text-white font-extrabold py-3 rounded-xl text-xs transition border border-white/15 active:scale-95 min-h-[44px]"
           >
-            Sell Card for PokéCoins
+            Sell Card for Cash
           </button>
         </div>
       </div>
@@ -599,13 +603,13 @@
         <i class="fa-solid fa-gift"></i>
       </div>
 
-      <h3 class="text-lg font-black text-white mb-1 tracking-tight">Daily PokéBonus</h3>
-      <p class="text-xs text-neutral-400 mb-4">Claim your daily allowance of PokéCoins!</p>
+      <h3 class="text-lg font-black text-white mb-1 tracking-tight">Daily Cash Allowance</h3>
+      <p class="text-xs text-neutral-400 mb-4">Claim your daily free allowance of fake money!</p>
 
       <div class="glass-card rounded-2xl p-3 border border-white/10 mb-4">
         <div class="text-[9px] text-neutral-400 uppercase font-bold tracking-widest mb-1">Bonus Allowance</div>
         <div class="text-xl font-black text-amber-400 flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-coins"></i> +250 PokéCoins
+          <i class="fa-solid fa-sack-dollar"></i> +$50.00 Cash
         </div>
       </div>
 
@@ -614,12 +618,12 @@
         onclick="claimDailyBonus()"
         class="w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-3 rounded-xl text-xs transition shadow-xl active:scale-95 flex items-center justify-center gap-2 min-h-[44px]"
       >
-        <i class="fa-solid fa-bolt"></i> CLAIM BONUS NOW
+        <i class="fa-solid fa-bolt"></i> CLAIM CASH BONUS NOW
       </button>
     </div>
   </div>
 
-  <!-- ADD POKECOINS MODAL -->
+  <!-- ADD CASH MODAL -->
   <div id="coins-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
     <div class="glass-panel rounded-2xl max-w-xs sm:max-w-sm w-full p-5 text-center relative border border-white/15 shadow-2xl">
       <button onclick="closeAddCoinsModal()" class="absolute top-3 right-3 text-neutral-400 hover:text-white text-base w-8 h-8 flex items-center justify-center">
@@ -627,24 +631,24 @@
       </button>
 
       <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xl font-black mb-2 border border-amber-400/30">
-        <i class="fa-solid fa-coins"></i>
+        <i class="fa-solid fa-sack-dollar"></i>
       </div>
 
-      <h3 class="text-lg font-black text-white mb-1 tracking-tight">Add PokéCoins</h3>
-      <p class="text-xs text-neutral-400 mb-4">Select or type custom coin amount.</p>
+      <h3 class="text-lg font-black text-white mb-1 tracking-tight">Add Fake Cash</h3>
+      <p class="text-xs text-neutral-400 mb-4">Select or type custom cash balance.</p>
 
       <div class="grid grid-cols-4 gap-1.5 mb-3">
+        <button onclick="addCustomCoins(50)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+          +$50
+        </button>
         <button onclick="addCustomCoins(100)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
-          +100
+          +$100
         </button>
         <button onclick="addCustomCoins(500)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
-          +500
+          +$500
         </button>
         <button onclick="addCustomCoins(1000)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
-          +1k
-        </button>
-        <button onclick="addCustomCoins(5000)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
-          +5k
+          +$1k
         </button>
       </div>
 
@@ -654,11 +658,11 @@
             id="custom-coins-input"
             type="number"
             min="1"
-            placeholder="Custom amount..."
+            placeholder="Custom amount ($)..."
             class="w-full glass-btn rounded-xl px-3.5 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-amber-400/60 pr-10 min-h-[42px]"
           />
-          <div class="absolute right-3 top-3 text-amber-400 text-xs">
-            <i class="fa-solid fa-coins"></i>
+          <div class="absolute right-3 top-3 text-amber-400 text-xs font-bold">
+            $
           </div>
         </div>
 
@@ -818,7 +822,7 @@
     };
 
     // Global State & LocalStorage Persistence
-    let coins = parseInt(localStorage.getItem('pokerips_coins') || '500');
+    let coins = parseFloat(localStorage.getItem('pokerips_cash') || localStorage.getItem('pokerips_coins') || '100.00');
     let binder = JSON.parse(localStorage.getItem('pokerips_binder') || '[]');
     let lastDailyClaim = parseInt(localStorage.getItem('pokerips_last_daily') || '0');
     
@@ -848,9 +852,9 @@
       id: 'universal_master_pack',
       name: 'Universal TCG Master Pack',
       era: '1999 - 2026 (All Eras)',
-      price: 50,
+      price: 10.00,
       coverArt: 'https://images.pokemontcg.io/sv3pt5/199_hires.png',
-      description: 'Contains every single card in Pokémon TCG history! Pull vintage grails, modern SIRs, gold cards, and ultra rares.'
+      description: 'Contains 10 completely random cards from Pokémon TCG history! Pure random chance — no guarantees!'
     };
 
     function escapeHtml(str) {
@@ -924,7 +928,7 @@
     }
 
     function saveState() {
-      localStorage.setItem('pokerips_coins', coins.toString());
+      localStorage.setItem('pokerips_cash', coins.toString());
       localStorage.setItem('pokerips_binder', JSON.stringify(binder));
       localStorage.setItem('pokerips_last_daily', lastDailyClaim.toString());
       updateUIHeader();
@@ -995,7 +999,7 @@
     }
 
     function updateUIHeader() {
-      document.getElementById('coins-display').textContent = coins.toLocaleString();
+      document.getElementById('coins-display').textContent = `$${coins.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       
       document.querySelectorAll('.binder-count-badge').forEach(badge => {
         badge.textContent = binder.length;
@@ -1020,8 +1024,8 @@
         claimBtn.innerHTML = `<i class="fa-solid fa-clock"></i> CLAIMED (${remainingHours}h remaining)`;
       } else {
         claimBtn.disabled = false;
-        claimBtn.className = "w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-3 rounded-xl text-xs transition shadow-xl active:scale-95 flex items-center justify-center gap-2 min-h-[44px]";
-        claimBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> CLAIM BONUS NOW`;
+        claimBtn.className = "w-full bg-emerald-400 hover:bg-emerald-300 text-black font-black py-3 rounded-xl text-xs transition shadow-xl active:scale-95 flex items-center justify-center gap-2 min-h-[44px]";
+        claimBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> CLAIM CASH BONUS NOW`;
       }
 
       modal.classList.remove('hidden');
@@ -1032,12 +1036,12 @@
     }
 
     function claimDailyBonus() {
-      coins += 250;
+      coins += 50.00;
       lastDailyClaim = Date.now();
       saveState();
       SoundEngine.playCoin();
       if (window.confetti) confetti({ particleCount: 50, spread: 50 });
-      showToast("Claimed +250 PokéCoins Daily Bonus!");
+      showToast("Claimed +$50.00 Daily Cash Bonus!");
       closeDailyWheelModal();
     }
 
@@ -1055,12 +1059,12 @@
       coins += amount;
       saveState();
       SoundEngine.playCoin();
-      showToast(`Added ${amount.toLocaleString()} PokéCoins!`);
+      showToast(`Added $${amount.toFixed(2)} Cash!`);
       closeAddCoinsModal();
     }
 
     function addCustomCoinsFromInput() {
-      const val = parseInt(document.getElementById('custom-coins-input').value);
+      const val = parseFloat(document.getElementById('custom-coins-input').value);
       if (isNaN(val) || val <= 0) {
         showToast("Please enter a valid amount.");
         return;
@@ -1069,7 +1073,7 @@
     }
 
     function setCustomCoinsFromInput() {
-      const val = parseInt(document.getElementById('custom-coins-input').value);
+      const val = parseFloat(document.getElementById('custom-coins-input').value);
       if (isNaN(val) || val < 0) {
         showToast("Please enter a valid amount.");
         return;
@@ -1077,20 +1081,20 @@
       coins = val;
       saveState();
       SoundEngine.playCoin();
-      showToast(`Balance set to ${val.toLocaleString()} PokéCoins!`);
+      showToast(`Balance set to $${val.toFixed(2)}!`);
       closeAddCoinsModal();
     }
 
     function renderPackStore() {
       const container = document.getElementById('featured-sets-grid');
       container.innerHTML = `
-        <div class="glass-panel rounded-3xl p-4 sm:p-6 flex flex-col md:flex-row gap-5 items-center shadow-2xl relative overflow-hidden border border-white/15">
-          <div class="w-full max-w-[240px] md:w-56 shrink-0">
+        <div class="glass-panel rounded-3xl p-3 sm:p-6 flex flex-col md:flex-row gap-4 sm:gap-5 items-center shadow-2xl relative overflow-hidden border border-white/15">
+          <div class="w-full max-w-[260px] md:w-56 shrink-0">
             <div class="pack-3d-wrap w-full h-72 cursor-pointer" onclick="buyPack('universal_master_pack')">
               <div class="pack-3d w-full h-full rounded-2xl overflow-hidden glass-card relative border border-amber-400/40 bg-gradient-to-b from-neutral-900 via-neutral-950 to-black flex flex-col justify-between shadow-2xl">
                 
                 <div class="pack-crimp-top h-6 w-full border-b border-white/20 flex items-center justify-between px-2 relative z-20">
-                  <span class="text-[7px] font-black text-amber-300 uppercase tracking-widest relative z-10">MASTER BOOSTER</span>
+                  <span class="text-[7px] font-black text-amber-300 uppercase tracking-widest relative z-10">PURE RANDOM BOOSTER</span>
                   <div class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] relative z-10"></div>
                 </div>
 
@@ -1100,7 +1104,7 @@
 
                   <div class="relative z-10 text-center pt-0.5">
                     <span class="text-[7px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/30">
-                      ALL TCG ERAS
+                      NO GUARANTEES
                     </span>
                     <h3 class="text-sm sm:text-base font-black text-white tracking-tight mt-1 leading-tight drop-shadow">
                       ${MASTER_PACK.name}
@@ -1113,13 +1117,13 @@
 
                   <div class="relative z-10 text-center pb-0.5">
                     <span class="text-[7px] font-extrabold text-neutral-300 tracking-wider uppercase bg-black/60 px-2 py-0.5 rounded-full border border-white/10">
-                      10 POKÉMON CARDS
+                      10 RANDOM CARDS
                     </span>
                   </div>
                 </div>
 
                 <div class="pack-crimp-bottom h-5 w-full border-t border-white/20 flex items-center justify-center relative z-20">
-                  <span class="text-[7px] font-black text-white/70 tracking-widest uppercase relative z-10">OFFICIAL TCG ODDS</span>
+                  <span class="text-[7px] font-black text-white/70 tracking-widest uppercase relative z-10">COMPLETELY RANDOM PULLS</span>
                 </div>
 
                 <div class="foil-overlay foil-sir opacity-75"></div>
@@ -1132,62 +1136,44 @@
             <div>
               <div class="flex flex-wrap items-center justify-center md:justify-start gap-1.5 mb-1.5">
                 <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
-                  <i class="fa-solid fa-bolt"></i> Single Booster
+                  <i class="fa-solid fa-dice"></i> 100% Random Pulls
                 </span>
                 <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-white/10 text-neutral-300 border border-white/10">
                   1999–2026
                 </span>
               </div>
-              <h3 class="text-base sm:text-xl font-black text-white tracking-tight">The Pokémon Master Booster Pack</h3>
+              <h3 class="text-base sm:text-xl font-black text-white tracking-tight">The Pure Random Booster Pack</h3>
               <p class="text-xs text-neutral-400 mt-1">
-                Rip open a booster containing genuine cards dynamically pulled from every official Pokémon TCG set!
+                Rip open a pack where all 10 cards are drawn 100% randomly from the entire database. Every slot can be anything!
               </p>
             </div>
 
             <div class="glass-card rounded-xl p-3 border border-white/10 space-y-1.5 text-left">
               <div class="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1 flex justify-between items-center">
-                <span>Pack Hit Probabilities</span>
-                <span class="text-amber-300">10 Cards / Pack</span>
+                <span>Pack Structure</span>
+                <span class="text-amber-300 font-bold">10 Cards / Pack</span>
               </div>
               
-              <div class="grid grid-cols-2 gap-1.5 text-[11px]">
-                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
-                  <span class="text-neutral-300">Commons</span>
-                  <span class="font-bold text-white">4x (100%)</span>
+              <div class="p-2.5 bg-white/5 rounded-xl border border-white/10 text-xs text-neutral-300 space-y-1">
+                <div class="font-black text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> No Slot Guarantees
                 </div>
-                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
-                  <span class="text-neutral-300">Uncommons</span>
-                  <span class="font-bold text-white">3x (100%)</span>
-                </div>
-                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
-                  <span class="text-neutral-300">Reverse Holo</span>
-                  <span class="font-bold text-white">1x (100%)</span>
-                </div>
-                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
-                  <span class="text-neutral-300">Rare / Holo</span>
-                  <span class="font-bold text-white">70.0%</span>
-                </div>
-                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
-                  <span class="text-neutral-300">Double Rare / EX</span>
-                  <span class="font-bold text-white">18.0%</span>
-                </div>
-                <div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
-                  <span class="text-amber-300 font-bold">Special Illus. Rare</span>
-                  <span class="font-bold text-amber-300">4.0%</span>
-                </div>
+                <p class="text-[11px] text-neutral-400 leading-relaxed">
+                  Unlike traditional packs with fixed common/uncommon slots, every single card in this booster is pulled completely at random from the full Pokémon TCG card database. You could pull 10 Grails, or 10 Commons!
+                </p>
               </div>
             </div>
 
             <div class="flex items-center justify-between gap-3 pt-1">
               <div class="text-left">
                 <div class="text-[8px] text-neutral-400 uppercase font-black tracking-widest">Price</div>
-                <div class="text-base font-black text-amber-400 flex items-center gap-1"><i class="fa-solid fa-coins"></i> 50</div>
+                <div class="text-base font-black text-amber-400 flex items-center gap-1">$10.00</div>
               </div>
               <button
                 onclick="buyPack('universal_master_pack')"
                 class="flex-1 sm:flex-initial bg-amber-400 hover:bg-amber-300 text-black font-black px-6 py-3 rounded-xl text-xs transition active:scale-95 shadow-xl flex items-center justify-center gap-2 min-h-[44px]"
               >
-                <i class="fa-solid fa-scissors"></i> RIP MASTER PACK (<i class="fa-solid fa-coins"></i> 50)
+                <i class="fa-solid fa-scissors"></i> RIP PACK FOR $10.00
               </button>
             </div>
           </div>
@@ -1212,50 +1198,16 @@
       };
     }
 
+    // Completely random 10-card generation without any slot or rarity guarantees
     function assembleRealisticPack(fetchedCards, setName = 'Universal Master Set') {
-      const commons = [];
-      const uncommons = [];
-      const rares = [];
-      const doubleRares = [];
-      const irs = [];
-      const sirs = [];
-      const golds = [];
-
-      fetchedCards.forEach(c => {
-        const r = (c.rarity || '').toLowerCase();
-        if (r.includes('gold') || r.includes('hyper rare')) golds.push(c);
-        else if (r.includes('special illustration') || r.includes('sir')) sirs.push(c);
-        else if (r.includes('illustration rare') || r.includes('ir')) irs.push(c);
-        else if (r.includes('double rare') || r.includes('vmax') || r.includes('ex') || r.includes('vstar')) doubleRares.push(c);
-        else if (r.includes('rare') || r.includes('holo')) rares.push(c);
-        else if (r.includes('uncommon')) uncommons.push(c);
-        else commons.push(c);
-      });
-
-      const getRandom = (arr, fallbackArr) => {
-        const list = (arr && arr.length > 0) ? arr : (fallbackArr && fallbackArr.length > 0 ? fallbackArr : fetchedCards);
-        return list[Math.floor(Math.random() * list.length)];
-      };
-
       const pack = [];
+      const totalCards = fetchedCards.length;
 
-      for (let i = 0; i < 4; i++) pack.push(formatCardObj(getRandom(commons, fetchedCards), setName));
-      for (let i = 0; i < 3; i++) pack.push(formatCardObj(getRandom(uncommons, fetchedCards), setName));
-
-      const revCard = formatCardObj(getRandom(commons.concat(uncommons), fetchedCards), setName);
-      revCard.rarity = 'Reverse Holo';
-      pack.push(revCard);
-
-      const roll = Math.random() * 100;
-      let hitCard;
-      if (roll < 1.0 && golds.length > 0) hitCard = getRandom(golds, fetchedCards);
-      else if (roll < 5.0 && sirs.length > 0) hitCard = getRandom(sirs, fetchedCards);
-      else if (roll < 12.0 && irs.length > 0) hitCard = getRandom(irs, fetchedCards);
-      else if (roll < 30.0 && doubleRares.length > 0) hitCard = getRandom(doubleRares, fetchedCards);
-      else hitCard = getRandom(rares, fetchedCards);
-
-      pack.push(formatCardObj(hitCard, setName));
-      pack.push(formatCardObj(getRandom(commons, fetchedCards), setName));
+      for (let i = 0; i < 10; i++) {
+        const randomIndex = Math.floor(Math.random() * totalCards);
+        const randomCard = fetchedCards[randomIndex];
+        pack.push(formatCardObj(randomCard, setName));
+      }
 
       return pack;
     }
@@ -1264,7 +1216,7 @@
       const setObj = MASTER_PACK;
 
       if (coins < setObj.price) {
-        showToast("Not enough PokéCoins! Click 'Add Coins' to top up.");
+        showToast("Not enough cash! Click 'Add Cash' to top up.");
         return;
       }
 
@@ -1293,7 +1245,7 @@
         }
       }
 
-      // Deduct coins only when pack is successfully created
+      // Deduct pack price in cash
       coins -= setObj.price;
       saveState();
 
@@ -1350,7 +1302,7 @@
       document.getElementById('reveal-card-name').textContent = card.name;
       document.getElementById('reveal-card-rarity').textContent = card.rarity;
       document.getElementById('reveal-card-price').textContent = `$${card.marketPrice.toFixed(2)}`;
-      document.getElementById('rip-coin-value').innerHTML = `+<i class="fa-solid fa-coins text-amber-400"></i> ${Math.max(1, Math.round(card.marketPrice * 2))}`;
+      document.getElementById('rip-coin-value').textContent = `+$${card.marketPrice.toFixed(2)}`;
 
       const foilOverlay = document.getElementById('reveal-foil-overlay');
       foilOverlay.className = `foil-overlay ${getFoilTypeByRarity(card.rarity)}`;
@@ -1395,11 +1347,11 @@
       const card = currentPackCards[currentCardIdx];
       if (!card) return;
 
-      const gain = Math.max(1, Math.round(card.marketPrice * 2));
+      const gain = card.marketPrice;
       coins += gain;
       saveState();
       SoundEngine.playCoin();
-      showToast(`Ripped ${card.name} for +${gain} PokéCoins!`);
+      showToast(`Sold ${card.name} for +$${gain.toFixed(2)} Cash!`);
 
       slideTopCard();
     }
@@ -1468,16 +1420,16 @@
         const effVal = (card.marketPrice || 0).toFixed(2);
         return `
           <div class="card-3d-wrap cursor-pointer" onclick="openInspectModal('${card.uniqueId}')">
-            <div class="card-3d glass-card rounded-xl overflow-hidden relative border border-white/10 p-2 group hover:border-white/30 transition">
-              <div class="aspect-[3/4] relative rounded-lg overflow-hidden bg-black mb-1.5">
+            <div class="card-3d glass-card rounded-xl overflow-hidden relative border border-white/10 p-1.5 sm:p-2 group hover:border-white/30 transition">
+              <div class="card-aspect relative rounded-lg overflow-hidden bg-black mb-1">
                 <img src="${card.image}" alt="${escapeHtml(card.name)}" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
                 <div class="foil-overlay ${foilClass}"></div>
                 <div class="card-glare"></div>
               </div>
-              <div class="text-left">
-                <div class="text-[11px] font-black text-white truncate leading-tight">${escapeHtml(card.name)}</div>
-                <div class="text-[8px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(card.rarity || 'Common')}</div>
-                <div class="text-xs font-black text-amber-400 mt-0.5">$${effVal}</div>
+              <div class="text-left px-0.5">
+                <div class="text-[11px] sm:text-xs font-black text-white truncate leading-tight">${escapeHtml(card.name)}</div>
+                <div class="text-[8px] sm:text-[9px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(card.rarity || 'Common')}</div>
+                <div class="text-xs sm:text-sm font-black text-amber-400 mt-0.5">$${effVal}</div>
               </div>
             </div>
           </div>
@@ -1510,8 +1462,7 @@
       const foilOverlay = document.getElementById('inspect-foil-overlay');
       foilOverlay.className = `foil-overlay ${getFoilTypeByRarity(card.rarity)}`;
 
-      const sellVal = Math.max(1, Math.round((card.marketPrice || 0) * 2));
-      document.getElementById('inspect-sell-btn').innerHTML = `<i class="fa-solid fa-fire text-amber-400 mr-1"></i> Sell for <i class="fa-solid fa-coins text-amber-400 mx-1"></i> ${sellVal.toLocaleString()} PokéCoins`;
+      document.getElementById('inspect-sell-btn').innerHTML = `<i class="fa-solid fa-fire text-amber-400 mr-1"></i> Sell for <i class="fa-solid fa-sack-dollar text-amber-400 mx-1"></i> $${effVal} Cash`;
 
       document.getElementById('inspect-modal').classList.remove('hidden');
       init3DHoverPhysics();
@@ -1525,14 +1476,14 @@
     function sellInspectedCard() {
       if (!selectedInspectedCard) return;
       const card = selectedInspectedCard;
-      const saleVal = Math.max(1, Math.round((card.marketPrice || 0) * 2));
+      const saleVal = card.marketPrice || 0;
 
       coins += saleVal;
       binder = binder.filter(c => c.uniqueId !== card.uniqueId);
       saveState();
 
       SoundEngine.playCoin();
-      showToast(`Sold ${card.name} for ${saleVal.toLocaleString()} PokéCoins!`);
+      showToast(`Sold ${card.name} for $${saleVal.toFixed(2)} Cash!`);
       closeInspectModal();
       renderBinder();
     }
@@ -1589,14 +1540,14 @@
         const price = getCardPrice(card);
         const cardImg = card.images?.large || card.images?.small || 'https://images.pokemontcg.io/cardback.png';
         return `
-          <div class="glass-card rounded-xl p-2 border border-white/10 flex flex-col justify-between">
-            <div class="aspect-[3/4] relative rounded-lg overflow-hidden bg-black mb-1.5">
+          <div class="glass-card rounded-xl p-1.5 sm:p-2 border border-white/10 flex flex-col justify-between">
+            <div class="card-aspect relative rounded-lg overflow-hidden bg-black mb-1">
               <img src="${cardImg}" alt="${escapeHtml(card.name)}" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
             </div>
-            <div class="text-left mb-2">
-              <div class="text-[11px] font-black text-white truncate leading-tight">${escapeHtml(card.name)}</div>
-              <div class="text-[8px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(card.rarity || 'Common')}</div>
-              <div class="text-xs font-black text-amber-400 mt-0.5">$${price.toFixed(2)}</div>
+            <div class="text-left mb-1.5 px-0.5">
+              <div class="text-[11px] sm:text-xs font-black text-white truncate leading-tight">${escapeHtml(card.name)}</div>
+              <div class="text-[8px] sm:text-[9px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(card.rarity || 'Common')}</div>
+              <div class="text-xs sm:text-sm font-black text-amber-400 mt-0.5">$${price.toFixed(2)}</div>
             </div>
             <button
               onclick="addSearchCardToBinder('${card.id}')"
