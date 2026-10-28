@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>PokéRips - Mobile TCG Card Rip Simulator</title>
   
   <!-- Tailwind CSS -->
@@ -31,12 +31,12 @@
   </script>
 
   <style>
-    /* Hide scrollbars globally across all browsers & devices */
+    /* Global Mobile Touch & Layout Normalization */
     * {
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
-      -ms-overflow-style: none !important;  /* IE and Edge */
-      scrollbar-width: none !important;  /* Firefox */
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
     }
 
     *::-webkit-scrollbar {
@@ -57,7 +57,8 @@
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
       touch-action: manipulation;
-      scrollbar-width: none !important;
+      min-height: 100vh;
+      min-height: 100dvh;
     }
 
     /* Glassmorphism Panel Classes */
@@ -85,14 +86,15 @@
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.12);
       transition: all 0.15s ease;
+      touch-action: manipulation;
     }
 
     .glass-btn:active {
       transform: scale(0.96);
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.18);
     }
 
-    /* 3D Card & Pack Tilt Containers (Hardware GPU Composited) */
+    /* 3D Card & Pack Tilt Containers */
     .card-3d-wrap, .pack-3d-wrap {
       perspective: 1000px;
       transform: translateZ(0);
@@ -106,6 +108,12 @@
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
+    }
+
+    /* Keep opening model completely still so crimp tear is prominent */
+    #sealed-pack-inner .pack-3d {
+      transform: none !important;
+      transition: none !important;
     }
 
     /* GPU Accelerated Image Rendering */
@@ -195,7 +203,7 @@
       mix-blend-mode: soft-light;
     }
 
-    /* Standard TCG Card Aspect Ratio (63mm x 88mm) */
+    /* Standard TCG Card Aspect Ratio */
     .card-aspect {
       aspect-ratio: 63 / 88;
     }
@@ -204,6 +212,7 @@
     .pack-crimp-top {
       background: linear-gradient(180deg, #1f1f1f 0%, #3a3a3a 50%, #171717 100%);
       position: relative;
+      touch-action: none;
     }
     .pack-crimp-top::before {
       content: '';
@@ -237,36 +246,88 @@
       pointer-events: none;
     }
 
-    /* Animations */
+    /* 2-Part Pack & Serrated Seam Styling */
+    .crimp-part-top {
+      clip-path: polygon(
+        0% 0%, 100% 0%, 100% 82%,
+        97.5% 100%, 95% 82%, 92.5% 100%, 90% 82%, 87.5% 100%, 85% 82%, 82.5% 100%, 80% 82%, 77.5% 100%, 75% 82%, 72.5% 100%, 70% 82%, 67.5% 100%, 65% 82%, 62.5% 100%, 60% 82%, 57.5% 100%, 55% 82%, 52.5% 100%, 50% 82%, 47.5% 100%, 45% 82%, 42.5% 100%, 40% 82%, 37.5% 100%, 35% 82%, 32.5% 100%, 30% 82%, 27.5% 100%, 25% 82%, 22.5% 100%, 20% 82%, 17.5% 100%, 15% 82%, 12.5% 100%, 10% 82%, 7.5% 100%, 5% 82%, 2.5% 100%, 0% 82%
+      );
+    }
+
+    .crimp-part-bottom {
+      clip-path: polygon(
+        0% 2.5%, 2.5% 0%, 5% 2.5%, 7.5% 0%, 10% 2.5%, 12.5% 0%, 15% 2.5%, 17.5% 0%, 20% 2.5%, 22.5% 0%, 25% 2.5%, 27.5% 0%, 30% 2.5%, 32.5% 0%, 35% 2.5%, 37.5% 0%, 40% 2.5%, 42.5% 0%, 45% 2.5%, 47.5% 0%, 50% 2.5%, 52.5% 0%, 55% 2.5%, 57.5% 0%, 60% 2.5%, 62.5% 0%, 65% 2.5%, 67.5% 0%, 70% 2.5%, 72.5% 0%, 75% 2.5%, 77.5% 0%, 80% 2.5%, 82.5% 0%, 85% 2.5%, 87.5% 0%, 90% 2.5%, 92.5% 0%, 95% 2.5%, 97.5% 0%, 100% 2.5%,
+        100% 100%, 0% 100%
+      );
+    }
+
+    #pack-top-crimp {
+      transform-origin: top left;
+      transition: transform 0.05s linear;
+    }
+
+    .crimp-tearing {
+      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.6);
+    }
+
+    /* Realistic Card / Foil Crimp Falling Off Animation */
+    @keyframes crimpFallOff {
+      0% {
+        transform: translate(0, 0) rotate(0deg) rotateX(0deg) rotateY(0deg) scale(1);
+        opacity: 1;
+        filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+      }
+      15% {
+        transform: translate(12px, -22px) rotate(-14deg) rotateX(25deg) rotateY(-15deg) scale(1.04);
+        opacity: 1;
+        filter: drop-shadow(0 12px 25px rgba(251,191,36,0.8));
+      }
+      40% {
+        transform: translate(45px, 90px) rotate(35deg) rotateX(70deg) rotateY(40deg) scale(0.95);
+        opacity: 0.95;
+      }
+      70% {
+        transform: translate(85px, 260px) rotate(78deg) rotateX(140deg) rotateY(90deg) scale(0.85);
+        opacity: 0.6;
+      }
+      100% {
+        transform: translate(130px, 480px) rotate(115deg) rotateX(210deg) rotateY(150deg) scale(0.6);
+        opacity: 0;
+      }
+    }
+
+    .crimp-flying-off {
+      animation: crimpFallOff 0.52s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+      pointer-events: none;
+    }
+
     .card-slide-off {
       transform: translateY(-130%) rotate(-8deg) scale(0.9) !important;
       opacity: 0;
       transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes packShake {
-      0% { transform: rotate(0deg) scale(1); }
-      20% { transform: rotate(-4deg) scale(1.02); }
-      40% { transform: rotate(4deg) scale(1.02); }
-      60% { transform: rotate(-3deg) scale(1.03); }
-      80% { transform: rotate(3deg) scale(1.03); }
-      100% { transform: rotate(0deg) scale(1); }
-    }
-    .animate-pack-shake {
-      animation: packShake 0.4s ease-in-out;
-    }
-
-    @keyframes topCrimpPeel {
-      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(-130px) rotate(-18deg) scale(0.85); opacity: 0; }
-    }
-    .peel-off-top {
-      animation: topCrimpPeel 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-    }
-
     .rare-border-glow {
-      box-shadow: 0 0 30px rgba(251, 191, 36, 0.6), 0 0 15px rgba(255, 255, 255, 0.4);
+      box-shadow: 0 0 35px rgba(251, 191, 36, 0.7), 0 0 15px rgba(255, 255, 255, 0.5);
       border: none !important;
+    }
+
+    /* Foil Particle Spark Animation */
+    .foil-spark {
+      position: absolute;
+      pointer-events: none;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 8px #fbbf24;
+      animation: sparkFly 0.4s ease-out forwards;
+      z-index: 60;
+    }
+
+    @keyframes sparkFly {
+      0% { opacity: 1; transform: translate(0, 0) scale(1); }
+      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
     }
   </style>
 </head>
@@ -283,9 +344,6 @@
           <div>
             <h1 class="text-base sm:text-xl font-black tracking-wider text-white flex items-center gap-1.5 leading-none">
               POKÉ-RIPS
-              <span class="text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                <i class="fa-solid fa-microchip text-amber-400"></i> GPU Accelerated
-              </span>
             </h1>
             <p class="text-[10px] sm:text-xs text-neutral-400 font-medium mt-1">
               Booster Opening Simulator
@@ -348,201 +406,254 @@
     <div id="tab-packs" class="tab-content">
       <div class="mb-4 text-center md:text-left">
         <h2 class="text-lg sm:text-xl font-black text-white flex items-center justify-center md:justify-start gap-2 tracking-tight">
-          Universal Booster Pack
+          Universal TCG Booster Products
         </h2>
         <p class="text-xs text-neutral-400 mt-0.5">Includes cards from Base Set (1999) to current sets with official TCG odds!</p>
       </div>
-      <div id="featured-sets-grid" class="max-w-3xl mx-auto"></div>
+      <div id="featured-sets-grid"></div>
     </div>
 
     <!-- TAB 2: MY BINDER -->
     <div id="tab-binder" class="tab-content hidden">
-      <div class="mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <div>
-          <h2 class="text-base sm:text-xl font-black text-white tracking-tight">Vaulted Card Binder</h2>
-          <p class="text-xs text-neutral-400">Your card collection with live market values.</p>
+      <div class="mb-3 flex flex-col gap-2.5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h2 class="text-base sm:text-xl font-black text-white tracking-tight">Vaulted Card Binder</h2>
+            <p id="binder-stats-text" class="text-xs text-neutral-400">0 Unique Cards • 0 Total Cards</p>
+          </div>
+
+          <!-- QOL Binder Action Controls -->
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              id="stack-toggle-btn"
+              onclick="toggleBinderStacking()"
+              class="glass-btn px-3 py-2 rounded-xl text-xs font-bold text-amber-300 border border-amber-400/30 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]"
+            >
+              <i class="fa-solid fa-layer-group text-amber-400"></i>
+              <span id="stack-btn-text">Stacking: ON</span>
+            </button>
+
+            <button
+              onclick="openSellBelowModal()"
+              class="glass-btn hover:bg-neutral-800 px-3 py-2 rounded-xl text-xs font-bold text-neutral-200 border border-white/10 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]"
+            >
+              <i class="fa-solid fa-filter-circle-dollar text-amber-400"></i>
+              <span>Sell < $<span id="sell-below-btn-label">1.00</span></span>
+            </button>
+
+            <button
+              onclick="sellAllDuplicates()"
+              class="glass-btn hover:bg-neutral-800 px-3 py-2 rounded-xl text-xs font-bold text-neutral-200 border border-white/10 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]"
+            >
+              <i class="fa-solid fa-broom text-amber-400"></i>
+              <span>Sell Duplicates</span>
+            </button>
+          </div>
         </div>
-        <div class="flex gap-2 w-full sm:w-auto">
-          <select id="binder-filter-set" onchange="renderBinder()" class="flex-1 sm:flex-none glass-btn text-xs text-neutral-200 rounded-xl px-2.5 py-2 focus:outline-none border border-white/10 min-h-[40px]">
-            <option value="all">All Sets</option>
-          </select>
-          <select id="binder-sort-select" onchange="renderBinder()" class="flex-1 sm:flex-none glass-btn text-xs text-neutral-200 rounded-xl px-2.5 py-2 focus:outline-none border border-white/10 min-h-[40px]">
-            <option value="value-desc">Highest Value</option>
-            <option value="value-asc">Lowest Value</option>
-            <option value="recent">Most Recent</option>
-            <option value="name">Card Name (A-Z)</option>
-          </select>
+
+        <!-- Filter & Sort Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-white/5 p-2 rounded-xl border border-white/10">
+          <div class="flex items-center gap-2 flex-1 min-w-[150px]">
+            <i class="fa-solid fa-filter text-xs text-neutral-400"></i>
+            <select id="binder-filter-set" onchange="renderBinder()" class="bg-black/60 text-white text-xs font-bold rounded-lg px-2.5 py-1.5 border border-white/10 outline-none w-full">
+              <option value="all">All Sets</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2 flex-1 min-w-[150px]">
+            <i class="fa-solid fa-arrow-down-wide-short text-xs text-neutral-400"></i>
+            <select id="binder-sort-select" onchange="renderBinder()" class="bg-black/60 text-white text-xs font-bold rounded-lg px-2.5 py-1.5 border border-white/10 outline-none w-full">
+              <option value="value-desc">Value: High to Low</option>
+              <option value="value-asc">Value: Low to High</option>
+              <option value="recent">Recently Added</option>
+              <option value="name">Name A-Z</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div id="binder-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4"></div>
+
+      <!-- Binder Cards Grid -->
+      <div id="binder-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3"></div>
     </div>
 
-    <!-- TAB 3: SEARCH ALL CARDS -->
+    <!-- TAB 3: SEARCH DATABASE -->
     <div id="tab-search" class="tab-content hidden">
-      <div class="max-w-xl mx-auto mb-3 sm:mb-6">
-        <form onsubmit="handleSearch(event)" class="flex gap-2">
+      <div class="mb-4">
+        <h2 class="text-lg sm:text-xl font-black text-white tracking-tight mb-1">Search Pokémon TCG Database</h2>
+        <p class="text-xs text-neutral-400 mb-3">Lookup any official card, check real live market values, and instantly vault to your collection.</p>
+        
+        <form onsubmit="handleSearch(event)" class="flex gap-2 max-w-xl">
           <input
             id="search-input"
             type="text"
-            placeholder="Search Pokémon name (e.g. Charizard, Pikachu)..."
-            class="flex-1 glass-btn rounded-xl px-3.5 py-3 text-white text-xs focus:outline-none focus:border-amber-400/60 min-h-[44px]"
+            placeholder="Search by Pokémon name (e.g. Charizard, Gengar, Rayquaza)..."
+            class="flex-1 glass-btn rounded-xl px-3.5 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-amber-400/60 min-h-[44px]"
           />
           <button
             type="submit"
-            class="bg-amber-400 hover:bg-amber-300 text-black font-extrabold px-4 sm:px-6 py-3 rounded-xl text-xs transition shadow-lg shrink-0 min-h-[44px]"
+            class="bg-amber-400 hover:bg-amber-300 text-black font-black px-4 py-2.5 rounded-xl text-xs transition active:scale-95 flex items-center gap-1.5 shrink-0 min-h-[44px]"
           >
-            Search
+            <i class="fa-solid fa-magnifying-glass"></i> Search
           </button>
         </form>
       </div>
 
-      <div id="search-results-header" class="hidden flex justify-between items-center mb-2.5">
-        <h3 id="search-count-title" class="text-xs sm:text-sm font-bold text-white">Found Pokémon Cards</h3>
+      <div id="search-results-header" class="hidden mb-3">
+        <h3 id="search-count-title" class="text-xs font-black text-amber-400 uppercase tracking-widest">Found 0 Cards</h3>
       </div>
 
-      <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3"></div>
+      <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3"></div>
     </div>
   </div>
 
-  <!-- Mobile Bottom Touch Navigation Bar -->
-  <div class="fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/90 backdrop-blur-xl border-t border-white/10 px-2 py-2 flex justify-around items-center md:hidden">
-    <button 
-      id="tab-btn-packs-mobile" 
-      onclick="switchTab('packs')" 
-      class="tab-btn-m flex flex-col items-center justify-center py-1 px-3 rounded-xl text-amber-400 transition"
-    >
-      <i class="fa-solid fa-boxes-stacked text-base mb-1"></i>
-      <span class="text-[10px] font-extrabold">Store</span>
+  <!-- Mobile Bottom Bar -->
+  <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl border-t border-white/10 px-4 py-2 flex justify-around items-center">
+    <button id="tab-btn-packs-mobile" onclick="switchTab('packs')" class="tab-btn-m flex flex-col items-center text-amber-400">
+      <i class="fa-solid fa-boxes-stacked text-base"></i>
+      <span class="text-[9px] font-bold mt-0.5">Store</span>
     </button>
-    <button 
-      id="tab-btn-binder-mobile" 
-      onclick="switchTab('binder')" 
-      class="tab-btn-m flex flex-col items-center justify-center py-1 px-3 rounded-xl text-neutral-400 transition"
-    >
-      <i class="fa-solid fa-book-bookmark text-base mb-1"></i>
-      <span class="text-[10px] font-extrabold">Binder (<span class="binder-count-badge">0</span>)</span>
+    <button id="tab-btn-binder-mobile" onclick="switchTab('binder')" class="tab-btn-m flex flex-col items-center text-neutral-400">
+      <i class="fa-solid fa-book-bookmark text-base"></i>
+      <span class="text-[9px] font-bold mt-0.5">Binder</span>
     </button>
-    <button 
-      id="tab-btn-search-mobile" 
-      onclick="switchTab('search')" 
-      class="tab-btn-m flex flex-col items-center justify-center py-1 px-3 rounded-xl text-neutral-400 transition"
-    >
-      <i class="fa-solid fa-magnifying-glass text-base mb-1"></i>
-      <span class="text-[10px] font-extrabold">Search</span>
+    <button id="tab-btn-search-mobile" onclick="switchTab('search')" class="tab-btn-m flex flex-col items-center text-neutral-400">
+      <i class="fa-solid fa-magnifying-glass text-base"></i>
+      <span class="text-[9px] font-bold mt-0.5">Search</span>
     </button>
   </div>
 
-  <!-- PACK OPENING OVERLAY MODAL -->
-  <div id="pack-overlay" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl hidden flex items-center justify-center p-3 overflow-y-auto">
-    
+  <!-- PACK OPENING / REVEAL OVERLAY MODAL -->
+  <div id="pack-overlay" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl hidden flex flex-col items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <button onclick="closePackModal()" class="absolute top-3 right-3 text-neutral-400 hover:text-white text-base w-9 h-9 flex items-center justify-center glass-btn rounded-full z-50">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
     <!-- Loading State -->
-    <div id="pack-loading" class="text-center hidden p-4">
-      <i class="fa-solid fa-spinner text-4xl text-amber-400 animate-spin mb-3"></i>
-      <p class="text-sm font-bold text-white">Assembling Booster Pack...</p>
-      <p id="pack-loading-status" class="text-xs text-neutral-400 mt-1">Generating 10 cards with official TCG odds</p>
+    <div id="pack-loading" class="text-center py-12 flex flex-col items-center">
+      <i class="fa-solid fa-spinner text-4xl text-amber-400 animate-spin mb-4"></i>
+      <p id="pack-loading-status" class="text-sm font-bold text-white mb-1">Preparing booster pack...</p>
+      <p class="text-xs text-neutral-400">Fetching live card data from Pokémon TCG</p>
     </div>
 
-    <!-- SEALED BOOSTER PACK SCREEN -->
-    <div id="pack-sealed-container" class="max-w-xs sm:max-w-sm w-full text-center hidden flex flex-col items-center my-auto">
-      <div class="text-[10px] font-bold text-neutral-400 mb-3 uppercase tracking-widest flex items-center justify-center gap-1">
-        <i class="fa-solid fa-hand-pointer text-amber-400"></i> TAP PACK TO RIP OPEN
+    <!-- Sealed Pack Manual Tear State -->
+    <div id="pack-sealed-container" class="hidden flex flex-col items-center text-center max-w-xs sm:max-w-sm w-full my-auto">
+      
+      <div class="mb-3 text-center">
+        <span class="text-[10px] font-black text-amber-300 uppercase tracking-widest bg-amber-400/20 px-3 py-1 rounded-full border border-amber-400/30 flex items-center gap-1.5 justify-center">
+          <i class="fa-solid fa-scissors text-amber-400 animate-bounce"></i> SWIPE CRIMP ACROSS TO RIP OFF
+        </span>
       </div>
 
-      <!-- Sealed Pack Wrapper Container -->
-      <div id="sealed-pack-3d-wrap" class="pack-3d-wrap cursor-pointer mb-5 w-full max-w-[240px] sm:max-w-[260px]" onclick="handlePackTearClick()">
-        <div id="sealed-pack-inner" class="pack-3d w-full h-[380px] sm:h-[420px] relative rounded-2xl overflow-hidden glass-card border border-white/20 shadow-2xl flex flex-col justify-between">
+      <!-- STATIONARY 2-PART PACK CONTAINER -->
+      <div id="sealed-pack-inner" class="w-[230px] sm:w-[260px] h-[350px] sm:h-[390px] mb-4 relative select-none">
+        
+        <div class="pack-3d w-full h-full rounded-2xl overflow-hidden glass-card relative border border-amber-400/40 bg-gradient-to-b from-neutral-900 via-neutral-950 to-black flex flex-col shadow-2xl">
           
-          <!-- Top Foil Crimp -->
-          <div id="pack-top-crimp" class="pack-crimp-top h-12 w-full border-b border-white/20 p-2 flex items-center justify-center relative z-30 transition">
-            <span class="text-[9px] font-black text-black uppercase tracking-widest bg-amber-400 px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 border border-amber-300 relative z-10">
-              <i class="fa-solid fa-scissors text-xs"></i> TAP TO RIP
-            </span>
+          <!-- PART 1: MANUAL INTERACTIVE TOP CRIMP STRIP -->
+          <div id="pack-top-crimp" class="pack-crimp-top crimp-part-top h-12 w-full border-b border-white/20 flex items-center justify-between px-3 relative z-30 cursor-grab active:cursor-grabbing overflow-hidden select-none touch-none bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800">
+            <div id="crimp-peel-progress-bg" class="absolute inset-0 bg-gradient-to-r from-amber-500/50 via-amber-400/70 to-amber-300/30 w-0 pointer-events-none transition-all duration-75"></div>
+            
+            <div class="flex items-center gap-1.5 relative z-10 pointer-events-none">
+              <i class="fa-solid fa-scissors text-amber-300 text-xs animate-pulse"></i>
+              <span id="crimp-instruction-text" class="text-[9px] font-black text-amber-200 uppercase tracking-widest">SWIPE TO TEAR</span>
+            </div>
+
+            <div class="flex items-center gap-1.5 relative z-10 pointer-events-none">
+              <span id="peel-percent-badge" class="text-[9px] font-black text-black bg-amber-400 px-2 py-0.5 rounded shadow-md">0%</span>
+              <div class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,1)]"></div>
+            </div>
           </div>
 
-          <!-- Main Pack Art Body -->
-          <div id="pack-main-body" class="w-full flex-1 relative flex flex-col justify-between p-3 bg-neutral-950 overflow-hidden">
-            <div id="sealed-pack-bg" class="absolute inset-0 bg-cover bg-center opacity-30 filter blur-sm"></div>
-            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/90 z-0"></div>
+          <!-- PART 2: LOWER MAIN PACK BODY -->
+          <div id="pack-main-body" class="crimp-part-bottom relative flex-1 w-full flex flex-col justify-between p-3 overflow-hidden bg-gradient-to-b from-neutral-900 via-neutral-950 to-black -mt-1.5 pt-4">
+            <div id="sealed-pack-bg" class="absolute inset-0 bg-cover bg-center opacity-40 scale-105" style="filter: blur(2px);"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/90"></div>
 
             <div class="relative z-10 text-center pt-1">
-              <span id="sealed-pack-era" class="text-[8px] font-black uppercase tracking-widest bg-white/10 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/20">
-                1999 - 2026
+              <span id="sealed-pack-era" class="text-[8px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/30">
+                10 CARDS PER PACK
               </span>
-              <h3 id="sealed-pack-title" class="text-base font-black text-white mt-1 tracking-tight drop-shadow-md">
-                Universal Master Booster
+              <h3 id="sealed-pack-title" class="text-base font-black text-white tracking-tight mt-1 leading-tight drop-shadow">
+                Universal Master Pack
               </h3>
             </div>
 
             <div class="relative z-10 my-auto flex justify-center py-2">
-              <img id="sealed-pack-art-img" src="" alt="Pack Cover" decoding="async" class="h-40 sm:h-48 object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)]" />
+              <img id="sealed-pack-art-img" src="" alt="Pack Art" class="h-40 object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)]" />
             </div>
 
-            <div class="relative z-10 bg-black/60 py-1 px-2 rounded-lg text-center border border-white/10 backdrop-blur-sm">
-              <span class="text-[8px] font-black text-neutral-300 tracking-widest uppercase">
-                10 POKÉMON CARDS • OFFICIAL ODDS
+            <div class="relative z-10 text-center pb-1">
+              <span id="sealed-pack-type-label" class="text-[8px] font-black text-neutral-300 tracking-widest uppercase bg-black/60 px-2 py-0.5 rounded-full border border-white/10">
+                10 CARDS
               </span>
             </div>
+
+            <div class="pack-crimp-bottom h-5 w-full border-t border-white/20 flex items-center justify-center relative z-20 mt-2 rounded-b-xl">
+              <span class="text-[7px] font-black text-white/70 tracking-widest uppercase relative z-10">SEALED BOOSTER</span>
+            </div>
           </div>
 
-          <!-- Bottom Crimp Bar -->
-          <div class="pack-crimp-bottom h-5 w-full border-t border-white/20 flex items-center justify-center relative z-20">
-            <span class="text-[7px] font-black text-white/50 tracking-widest uppercase relative z-10">FACTORY SEALED</span>
-          </div>
-
-          <div class="foil-overlay foil-holo opacity-50"></div>
+          <div class="foil-overlay foil-sir opacity-70"></div>
           <div class="card-glare"></div>
         </div>
       </div>
 
       <button
-        onclick="handlePackTearClick()"
-        class="w-full max-w-[240px] bg-amber-400 hover:bg-amber-300 text-black font-black py-3 rounded-xl text-xs transition active:scale-95 shadow-xl flex items-center justify-center gap-2 min-h-[44px]"
+        onclick="quickRipPack()"
+        class="w-full glass-btn hover:bg-neutral-800 text-white font-extrabold py-2.5 rounded-xl text-xs transition border border-white/15 active:scale-95 flex items-center justify-center gap-2 min-h-[44px]"
       >
-        <i class="fa-solid fa-scissors"></i> RIP & PEEL PACK
+        <i class="fa-solid fa-bolt text-amber-400"></i> QUICK AUTO-RIP
       </button>
     </div>
 
-    <!-- 10-CARD STACK REVEAL VIEWPORT -->
-    <div id="pack-cards-container" class="max-w-md w-full text-center hidden flex flex-col items-center my-auto px-1">
-      <div class="w-full flex justify-between items-center mb-1.5 px-1">
-        <span id="card-counter-badge" class="text-xs font-bold text-neutral-300 tracking-widest uppercase">
+    <!-- Card Reveal State -->
+    <div id="pack-cards-container" class="hidden flex flex-col items-center text-center max-w-md w-full my-auto">
+      <div class="flex items-center justify-between w-full max-w-[340px] mb-2 px-1">
+        <span id="card-counter-badge" class="text-xs font-black text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20">
           Card 1 of 10
         </span>
-        <button
-          onclick="vaultAllRemainingCards()"
-          class="text-xs text-white font-extrabold flex items-center gap-1 glass-btn px-2.5 py-1.5 rounded-lg border border-white/10 active:scale-95 min-h-[36px]"
-        >
-          <i class="fa-solid fa-box-archive text-[10px]"></i> Vault All
-        </button>
+
+        <div class="flex items-center gap-1.5">
+          <button
+            id="auto-flip-btn"
+            onclick="toggleAutoFlip()"
+            class="glass-btn hover:bg-white hover:text-black text-white font-black px-2.5 py-1 rounded-full text-[10px] transition flex items-center gap-1 border border-white/15 min-h-[32px]"
+          >
+            <i class="fa-solid fa-forward text-[9px]"></i> Auto Flip
+          </button>
+          <button
+            onclick="vaultAllRemainingCards()"
+            class="glass-btn hover:bg-white hover:text-black text-white font-black px-2.5 py-1 rounded-full text-[10px] transition flex items-center gap-1 border border-white/15 min-h-[32px]"
+          >
+            <i class="fa-solid fa-box-archive text-[9px]"></i> Vault All
+          </button>
+        </div>
       </div>
 
       <!-- Card Container Stack -->
       <div id="card-reveal-viewport"
-        class="w-[86vw] sm:w-[320px] card-aspect max-h-[64vh] relative rounded-2xl card-3d-wrap cursor-pointer my-1.5"
+        class="w-[82vw] sm:w-[300px] card-aspect max-h-[60vh] relative rounded-2xl card-3d-wrap cursor-pointer my-1.5"
         onclick="handleCardClick()"
       >
-        <div id="holo-card-element" class="w-full h-full card-3d relative rounded-2xl overflow-hidden shadow-2xl bg-transparent">
-          <div class="w-full h-full relative bg-transparent">
-            <img id="reveal-card-img" src="" alt="Card" decoding="async" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
-            <div id="reveal-foil-overlay" class="foil-overlay"></div>
-            <div class="card-glare"></div>
+        <div id="holo-card-element" class="w-full h-full card-3d relative rounded-2xl overflow-hidden shadow-2xl bg-black">
+          <img id="reveal-card-img" src="" alt="Card" decoding="async" class="w-full h-full object-contain bg-black" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+          <div id="reveal-foil-overlay" class="foil-overlay"></div>
+          <div class="card-glare"></div>
 
-            <div class="absolute bottom-2 left-2 right-2 glass-panel rounded-xl p-2 border border-white/15 z-20 flex justify-between items-center text-left shadow-2xl">
-              <div class="min-w-0 pr-2">
-                <div id="reveal-card-name" class="text-xs font-black text-white truncate">Charizard ex</div>
-                <div id="reveal-card-rarity" class="text-[9px] text-neutral-300 font-bold truncate">Special Illustration Rare</div>
-              </div>
-              <div class="text-right shrink-0">
-                <div class="text-[8px] text-neutral-400 uppercase font-black tracking-widest">Value</div>
-                <div id="reveal-card-price" class="text-xs font-black text-amber-400">$145.00</div>
-              </div>
+          <div class="absolute bottom-2 left-2 right-2 glass-panel rounded-xl p-2 border border-white/15 z-20 flex justify-between items-center text-left shadow-2xl">
+            <div class="min-w-0 pr-2">
+              <div id="reveal-card-name" class="text-xs font-black text-white truncate">Charizard ex</div>
+              <div id="reveal-card-rarity" class="text-[9px] text-neutral-300 font-bold truncate">Special Illustration Rare</div>
+            </div>
+            <div id="reveal-card-price" class="text-xs font-black text-amber-400 bg-black/60 py-1 px-2 rounded-lg border border-amber-400/30 shrink-0">
+              $145.00
             </div>
           </div>
         </div>
       </div>
 
       <div class="text-[10px] text-neutral-400 my-1 font-semibold tracking-wider flex items-center justify-center gap-1">
-        <i class="fa-solid fa-hand-pointer text-amber-400"></i> Tap card or swipe up to auto-vault
+        <i class="fa-solid fa-hand-pointer text-amber-400"></i> Tap card or swipe to vault
       </div>
 
       <div class="flex items-center gap-2 w-full max-w-[340px] mt-1.5">
@@ -582,10 +693,16 @@
         </div>
 
         <div class="w-full">
-          <span id="inspect-card-rarity" class="text-[9px] font-extrabold uppercase tracking-widest bg-white/10 text-neutral-200 px-2.5 py-0.5 rounded-full border border-white/15">
-            Special Illustration Rare
-          </span>
-          <h3 id="inspect-card-name" class="text-base sm:text-lg font-black text-white mt-1.5 tracking-tight truncate">Charizard ex</h3>
+          <div class="flex items-center justify-center gap-2 mb-1.5">
+            <span id="inspect-card-rarity" class="text-[9px] font-extrabold uppercase tracking-widest bg-white/10 text-neutral-200 px-2.5 py-0.5 rounded-full border border-white/15">
+              Special Illustration Rare
+            </span>
+            <span id="inspect-card-count-badge" class="text-[9px] font-black uppercase tracking-widest bg-amber-400 text-black px-2 py-0.5 rounded-full shadow">
+              Owned: 1
+            </span>
+          </div>
+
+          <h3 id="inspect-card-name" class="text-base sm:text-lg font-black text-white tracking-tight truncate">Charizard ex</h3>
           <p id="inspect-card-set" class="text-xs text-neutral-400 mb-2.5 truncate">Scarlet & Violet 151 • #199</p>
 
           <div class="glass-btn p-2 rounded-xl border border-white/10 mb-3 flex justify-between items-center">
@@ -593,13 +710,7 @@
             <span id="inspect-card-value" class="text-base font-black text-amber-400">$145.00</span>
           </div>
 
-          <button
-            id="inspect-sell-btn"
-            onclick="sellInspectedCard()"
-            class="w-full glass-btn hover:bg-white hover:text-black text-white font-extrabold py-3 rounded-xl text-xs transition border border-white/15 active:scale-95 min-h-[44px]"
-          >
-            Sell Card for Cash
-          </button>
+          <div id="inspect-sell-container" class="w-full"></div>
         </div>
       </div>
     </div>
@@ -672,7 +783,7 @@
             type="number"
             min="1"
             placeholder="Custom amount ($)..."
-            class="w-full glass-btn rounded-xl px-3.5 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-amber-400/60 pr-10 min-h-[42px]"
+            class="w-full glass-btn rounded-xl px-3.5 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-amber-400/60 pr-10 min-h-[44px]"
           />
           <div class="absolute right-3 top-3 text-amber-400 text-xs font-bold">
             $
@@ -682,13 +793,13 @@
         <div class="flex gap-2">
           <button
             onclick="addCustomCoinsFromInput()"
-            class="flex-1 bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-2.5 rounded-xl text-xs transition shadow-lg active:scale-95 flex items-center justify-center gap-1 min-h-[42px]"
+            class="flex-1 bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-2.5 rounded-xl text-xs transition shadow-lg active:scale-95 flex items-center justify-center gap-1 min-h-[44px]"
           >
             <i class="fa-solid fa-plus"></i> Add
           </button>
           <button
             onclick="setCustomCoinsFromInput()"
-            class="flex-1 glass-btn hover:bg-white hover:text-black text-white font-extrabold py-2.5 rounded-xl text-xs transition border border-white/15 active:scale-95 flex items-center justify-center gap-1 min-h-[42px]"
+            class="flex-1 glass-btn hover:bg-white hover:text-black text-white font-extrabold py-2.5 rounded-xl text-xs transition border border-white/15 active:scale-95 flex items-center justify-center gap-1 min-h-[44px]"
           >
             <i class="fa-solid fa-pen-to-square"></i> Set
           </button>
@@ -697,14 +808,92 @@
     </div>
   </div>
 
+  <!-- SELL BELOW VALUE MODAL -->
+  <div id="sell-below-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-xs sm:max-w-sm w-full p-5 text-center relative border border-white/15 shadow-2xl">
+      <button onclick="closeSellBelowModal()" class="absolute top-3 right-3 text-neutral-400 hover:text-white text-base w-8 h-8 flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xl font-black mb-2 border border-amber-400/30">
+        <i class="fa-solid fa-filter-circle-dollar"></i>
+      </div>
+
+      <h3 class="text-lg font-black text-white mb-1 tracking-tight">Bulk Sell Cards Under $X</h3>
+      <p class="text-xs text-neutral-400 mb-3">Sell all cards in your binder worth less than your chosen value.</p>
+
+      <div class="space-y-3">
+        <div class="grid grid-cols-4 gap-1.5">
+          <button onclick="setSellBelowThreshold(0.50)" class="glass-btn hover:bg-white hover:text-black font-black py-1.5 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+            <$0.50
+          </button>
+          <button onclick="setSellBelowThreshold(1.00)" class="glass-btn hover:bg-white hover:text-black font-black py-1.5 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+            <$1.00
+          </button>
+          <button onclick="setSellBelowThreshold(2.00)" class="glass-btn hover:bg-white hover:text-black font-black py-1.5 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+            <$2.00
+          </button>
+          <button onclick="setSellBelowThreshold(5.00)" class="glass-btn hover:bg-white hover:text-black font-black py-1.5 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
+            <$5.00
+          </button>
+        </div>
+
+        <div class="relative">
+          <input
+            id="sell-below-input"
+            type="number"
+            step="0.05"
+            min="0.01"
+            value="1.00"
+            oninput="updateSellBelowPreview()"
+            placeholder="Threshold ($)..."
+            class="w-full glass-btn rounded-xl px-3.5 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-amber-400/60 pr-10 min-h-[44px]"
+          />
+          <div class="absolute right-3 top-3 text-amber-400 text-xs font-bold">$</div>
+        </div>
+
+        <div id="sell-below-preview-text" class="text-xs text-neutral-300 font-semibold bg-white/5 p-2 rounded-xl border border-white/10">
+          Calculating matching cards...
+        </div>
+
+        <button
+          onclick="confirmSellBelowValue()"
+          class="w-full bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-3 rounded-xl text-xs transition shadow-lg active:scale-95 flex items-center justify-center gap-2 min-h-[44px]"
+        >
+          <i class="fa-solid fa-broom"></i> SELL MATCHING CARDS
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- APPLICATION LOGIC -->
   <script>
-    // GPU-Accelerated Hardware Image Loader & Instant Pre-warming Pipeline
+    // Toast Notification Banner
+    function showToast(message, type = 'info') {
+      let toast = document.getElementById('app-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'app-toast';
+        toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-xl glass-panel text-xs font-bold text-white shadow-2xl border border-white/20 transition-all duration-300 opacity-0 pointer-events-none flex items-center gap-2';
+        document.body.appendChild(toast);
+      }
+      const icon = type === 'error' ? '<i class="fa-solid fa-circle-exclamation text-amber-400 text-sm"></i>' : '<i class="fa-solid fa-circle-info text-amber-400 text-sm"></i>';
+      toast.innerHTML = `${icon} <span>${escapeHtml(message)}</span>`;
+      toast.classList.remove('opacity-0', '-translate-y-2', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-2', 'pointer-events-none');
+      }, 3200);
+    }
+
+    // GPU-Accelerated Hardware Image Loader
     const GPUImageLoader = {
       cache: new Set(),
       imgElements: new Map(),
 
-      // Preloads & decodes image directly into GPU VRAM without blocking network/CORS
       preload(url) {
         if (!url || this.cache.has(url)) return url;
 
@@ -724,7 +913,6 @@
         return url;
       },
 
-      // Non-blocking parallel pre-warming for arrays of image URLs
       preloadBatch(urls) {
         if (!Array.isArray(urls)) return;
         urls.forEach(url => this.preload(url));
@@ -800,18 +988,38 @@
         } catch(e){}
       },
 
-      playTear() {
+      playTearTick(progress = 0) {
         try {
           this.init();
           const now = this.ctx.currentTime;
-          const duration = 0.35;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(140 + progress * 400, now);
+          osc.frequency.exponentialRampToValueAtTime(50, now + 0.025);
+
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.028);
+        } catch(e){}
+      },
+
+      playFullTear() {
+        try {
+          this.init();
+          const now = this.ctx.currentTime;
+          const duration = 0.38;
           const bufferSize = Math.floor(this.ctx.sampleRate * duration);
           const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
           const data = buffer.getChannelData(0);
 
           for (let i = 0; i < bufferSize; i++) {
             const t = i / bufferSize;
-            const chatter = Math.sin(i * 0.08) > 0.3 ? 1.0 : 0.25;
+            const chatter = Math.sin(i * 0.08) > 0.2 ? 1.0 : 0.2;
             data[i] = (Math.random() * 2 - 1) * Math.sin(t * Math.PI) * chatter;
           }
 
@@ -820,10 +1028,10 @@
 
           const hp = this.ctx.createBiquadFilter();
           hp.type = 'highpass';
-          hp.frequency.setValueAtTime(2000, now);
+          hp.frequency.setValueAtTime(1800, now);
 
           const gain = this.ctx.createGain();
-          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.setValueAtTime(0.35, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
           noise.connect(hp);
@@ -843,12 +1051,12 @@
             const gain = this.ctx.createGain();
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, now + idx * 0.04);
-            gain.gain.setValueAtTime(0.12, now + idx * 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.04 + 0.4);
+            gain.gain.setValueAtTime(0.14, now + idx * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.04 + 0.45);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start(now + idx * 0.04);
-            osc.stop(now + idx * 0.04 + 0.45);
+            osc.stop(now + idx * 0.04 + 0.5);
           });
         } catch(e){}
       },
@@ -871,11 +1079,13 @@
       }
     };
 
-    // Global State & LocalStorage Persistence
+    // Global State & Persistence
     let coins = parseFloat(localStorage.getItem('pokerips_cash') || localStorage.getItem('pokerips_coins') || '100.00');
     let binder = JSON.parse(localStorage.getItem('pokerips_binder') || '[]');
     let lastDailyClaim = parseInt(localStorage.getItem('pokerips_last_daily') || '0');
-    
+    let isBinderStacking = JSON.parse(localStorage.getItem('pokerips_stacking') || 'true');
+    let sellBelowThreshold = parseFloat(localStorage.getItem('pokerips_sell_below') || '1.00');
+
     // Cached Card Pool in localStorage
     let cachedPool = [];
     try {
@@ -890,18 +1100,40 @@
     let currentCardIdx = 0;
     let selectedSetObj = null;
     let selectedInspectedCard = null;
+    let selectedInspectedGroup = [];
     let searchResultsList = [];
     let isOpeningPack = false;
     let isSwipingVault = false;
+    let autoFlipInterval = null;
+    let isAutoFlipping = false;
 
-    // Master Pack Configuration
-    const MASTER_PACK = {
-      id: 'universal_master_pack',
-      name: 'Universal TCG Master Pack',
-      era: '1999 - 2026 (All Eras)',
-      price: 10.00,
-      coverArt: 'https://images.pokemontcg.io/sv3pt5/199_hires.png',
-      description: 'Contains 10 completely random cards from Pokémon TCG history! Pure random chance — no guarantees!'
+    // Crimp Tear Interaction State
+    let isCrimpDragging = false;
+    let crimpStartX = 0;
+    let crimpStartY = 0;
+    let crimpPeelProgress = 0;
+    let lastSoundTickProgress = 0;
+
+    // Products
+    const PRODUCTS = {
+      universal_master_pack: {
+        id: 'universal_master_pack',
+        name: 'Universal Booster Pack',
+        era: '10 Cards per Pack',
+        price: 10.00,
+        cardCount: 10,
+        coverArt: 'https://images.pokemontcg.io/sv3pt5/199_hires.png',
+        typeLabel: '10 POKÉMON CARDS'
+      },
+      universal_master_box: {
+        id: 'universal_master_box',
+        name: 'Universal Booster Box',
+        era: '100 Cards (10 Booster Packs)',
+        price: 100.00,
+        cardCount: 100,
+        coverArt: 'https://images.pokemontcg.io/sv3pt5/183_hires.png',
+        typeLabel: '100 CARDS • 10 PACKS'
+      }
     };
 
     function escapeHtml(str) {
@@ -912,12 +1144,10 @@
       currentTab = tabName;
       SoundEngine.playSlide();
 
-      // Hide content
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       const activeContent = document.getElementById(`tab-${tabName}`);
       if (activeContent) activeContent.classList.remove('hidden');
 
-      // Update desktop buttons
       document.querySelectorAll('.tab-btn-d').forEach(btn => {
         btn.classList.remove('bg-white', 'text-black');
         btn.classList.add('glass-btn', 'text-neutral-400');
@@ -928,7 +1158,6 @@
         activeBtnD.classList.remove('glass-btn', 'text-neutral-400');
       }
 
-      // Update mobile buttons
       document.querySelectorAll('.tab-btn-m').forEach(btn => {
         btn.classList.remove('text-amber-400');
         btn.classList.add('text-neutral-400');
@@ -942,11 +1171,8 @@
       if (tabName === 'binder') renderBinder();
     }
 
-    function showToast(msg) {
-      // Notifications disabled
-    }
-
     function getCardPrice(card) {
+      if (card.marketPrice) return card.marketPrice;
       if (card.tcgplayer && card.tcgplayer.prices) {
         const p = card.tcgplayer.prices;
         const tier = p.specialIllustration || p.secretRare || p.holofoil || p.unlimitedHolofoil || p.normal;
@@ -954,14 +1180,23 @@
           return Math.max(0.20, parseFloat((tier.market || tier.mid).toFixed(2)));
         }
       }
+
+      let hash = 0;
+      const str = (card.id || card.name || 'card') + (card.rarity || '');
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      const randVal = (Math.abs(hash) % 1000) / 1000;
+
       const r = (card.rarity || '').toLowerCase();
-      if (r.includes('hyper') || r.includes('gold')) return Math.floor(Math.random() * 80) + 70;
-      if (r.includes('special illustration') || r.includes('alt art')) return Math.floor(Math.random() * 120) + 50;
-      if (r.includes('illustration rare')) return Math.floor(Math.random() * 30) + 12;
-      if (r.includes('double rare') || r.includes('vmax') || r.includes('ex')) return Math.floor(Math.random() * 12) + 5;
-      if (r.includes('holo') || r.includes('rare')) return Math.floor(Math.random() * 4) + 1.50;
-      if (r.includes('uncommon')) return parseFloat((Math.random() * 0.8 + 0.4).toFixed(2));
-      return parseFloat((Math.random() * 0.4 + 0.15).toFixed(2));
+      if (r.includes('hyper') || r.includes('gold')) return parseFloat((70 + randVal * 80).toFixed(2));
+      if (r.includes('special illustration') || r.includes('alt art')) return parseFloat((50 + randVal * 120).toFixed(2));
+      if (r.includes('illustration rare')) return parseFloat((12 + randVal * 30).toFixed(2));
+      if (r.includes('double rare') || r.includes('vmax') || r.includes('ex')) return parseFloat((5 + randVal * 12).toFixed(2));
+      if (r.includes('holo') || r.includes('rare')) return parseFloat((1.50 + randVal * 4).toFixed(2));
+      if (r.includes('uncommon')) return parseFloat((0.40 + randVal * 0.8).toFixed(2));
+      return parseFloat((0.15 + randVal * 0.4).toFixed(2));
     }
 
     function getFoilTypeByRarity(rarityStr) {
@@ -978,10 +1213,11 @@
       localStorage.setItem('pokerips_cash', coins.toString());
       localStorage.setItem('pokerips_binder', JSON.stringify(binder));
       localStorage.setItem('pokerips_last_daily', lastDailyClaim.toString());
+      localStorage.setItem('pokerips_stacking', JSON.stringify(isBinderStacking));
+      localStorage.setItem('pokerips_sell_below', sellBelowThreshold.toString());
       updateUIHeader();
     }
 
-    // Retries fetching cards repeatedly from API if necessary
     async function fetchCardPoolWithRetry(maxRetries = 6, updateStatusFn = null) {
       let attempt = 0;
       while (attempt < maxRetries) {
@@ -1006,7 +1242,6 @@
               const newCards = data.data.filter(c => c && c.id && !existingIds.has(c.id));
               globalCardPool = [...globalCardPool, ...newCards];
               
-              // Persist card pool in localStorage for future offline/fast loading
               try {
                 const poolToSave = globalCardPool.slice(0, 350).map(c => ({
                   id: c.id,
@@ -1019,7 +1254,7 @@
                 }));
                 localStorage.setItem('pokerips_card_pool', JSON.stringify(poolToSave));
               } catch(e) {
-                console.warn('Could not save full card pool to localStorage:', e);
+                console.warn('Could not save card pool:', e);
               }
               return true;
             }
@@ -1054,6 +1289,9 @@
       
       const totalWorth = binder.reduce((sum, item) => sum + (item.marketPrice || 0), 0);
       document.getElementById('portfolio-value-display').textContent = `$${totalWorth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      const labelEl = document.getElementById('sell-below-btn-label');
+      if (labelEl) labelEl.textContent = sellBelowThreshold.toFixed(2);
       
       populateBinderSetFilter();
     }
@@ -1071,7 +1309,7 @@
         claimBtn.innerHTML = `<i class="fa-solid fa-clock"></i> CLAIMED (${remainingHours}h remaining)`;
       } else {
         claimBtn.disabled = false;
-        claimBtn.className = "w-full bg-emerald-400 hover:bg-emerald-300 text-black font-black py-3 rounded-xl text-xs transition shadow-xl active:scale-95 flex items-center justify-center gap-2 min-h-[44px]";
+        claimBtn.className = "w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-3 rounded-xl text-xs transition shadow-xl active:scale-95 flex items-center justify-center gap-2 min-h-[44px]";
         claimBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> CLAIM CASH BONUS NOW`;
       }
 
@@ -1088,7 +1326,6 @@
       saveState();
       SoundEngine.playCoin();
       if (window.confetti) confetti({ particleCount: 50, spread: 50 });
-      showToast("Claimed +$50.00 Daily Cash Bonus!");
       closeDailyWheelModal();
     }
 
@@ -1106,86 +1343,155 @@
       coins += amount;
       saveState();
       SoundEngine.playCoin();
-      showToast(`Added $${amount.toFixed(2)} Cash!`);
       closeAddCoinsModal();
     }
 
     function addCustomCoinsFromInput() {
       const val = parseFloat(document.getElementById('custom-coins-input').value);
-      if (isNaN(val) || val <= 0) {
-        showToast("Please enter a valid amount.");
-        return;
-      }
+      if (isNaN(val) || val <= 0) return;
       addCustomCoins(val);
     }
 
     function setCustomCoinsFromInput() {
       const val = parseFloat(document.getElementById('custom-coins-input').value);
-      if (isNaN(val) || val < 0) {
-        showToast("Please enter a valid amount.");
-        return;
-      }
+      if (isNaN(val) || val < 0) return;
       coins = val;
       saveState();
       SoundEngine.playCoin();
-      showToast(`Balance set to $${val.toFixed(2)}!`);
       closeAddCoinsModal();
     }
+
     async function renderPackStore() {
       const container = document.getElementById('featured-sets-grid');
-      const coverArtUrl = MASTER_PACK.coverArt;
-      GPUImageLoader.preload(coverArtUrl);
+      const packArtUrl = PRODUCTS.universal_master_pack.coverArt;
+      const boxArtUrl = PRODUCTS.universal_master_box.coverArt;
+      GPUImageLoader.preload(packArtUrl);
+      GPUImageLoader.preload(boxArtUrl);
+
       container.innerHTML = `
-        <div class="glass-panel rounded-3xl p-6 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden border border-white/15 max-w-sm mx-auto text-center">
-          <div class="w-full max-w-[240px] mb-4">
-            <div class="pack-3d-wrap w-full h-80 cursor-pointer" onclick="buyPack('universal_master_pack')">
-              <div class="pack-3d w-full h-full rounded-2xl overflow-hidden glass-card relative border border-amber-400/40 bg-gradient-to-b from-neutral-900 via-neutral-950 to-black flex flex-col justify-between shadow-2xl">
-                
-                <div class="pack-crimp-top h-6 w-full border-b border-white/20 flex items-center justify-between px-2 relative z-20">
-                  <span class="text-[7px] font-black text-amber-300 uppercase tracking-widest relative z-10">PURE RANDOM BOOSTER</span>
-                  <div class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] relative z-10"></div>
-                </div>
-
-                <div class="relative flex-1 w-full flex flex-col justify-between p-2.5 overflow-hidden">
-                  <div class="absolute inset-0 bg-cover bg-center opacity-40 scale-105" style="background-image: url('${coverArtUrl}'); filter: blur(2px);"></div>
-                  <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/90"></div>
-
-                  <div class="relative z-10 text-center pt-0.5">
-                    <span class="text-[7px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/30">
-                      NO GUARANTEES
-                    </span>
-                    <h3 class="text-sm sm:text-base font-black text-white tracking-tight mt-1 leading-tight drop-shadow">
-                      ${MASTER_PACK.name}
-                    </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+          
+          <!-- BOOSTER PACK (10 CARDS FOR $10) -->
+          <div class="glass-panel rounded-3xl p-5 flex flex-col items-center justify-between shadow-2xl relative overflow-hidden border border-white/15 text-center">
+            <div class="w-full max-w-[220px] mb-3">
+              <div class="pack-3d-wrap w-full h-72 cursor-pointer" onclick="buyPack('universal_master_pack')">
+                <div class="pack-3d w-full h-full rounded-2xl overflow-hidden glass-card relative border border-amber-400/30 bg-gradient-to-b from-neutral-900 via-neutral-950 to-black flex flex-col shadow-2xl">
+                  
+                  <div class="pack-crimp-top crimp-part-top h-6 w-full border-b border-white/20 flex items-center justify-between px-2 relative z-20">
+                    <span class="text-[7px] font-black text-amber-300 uppercase tracking-widest relative z-10">BOOSTER PACK</span>
+                    <div class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] relative z-10"></div>
                   </div>
 
-                  <div class="relative z-10 my-auto flex justify-center py-1">
-                    <img src="${coverArtUrl}" alt="Master Pack" loading="eager" fetchpriority="high" class="h-36 object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)]" />
+                  <div class="crimp-part-bottom relative flex-1 w-full flex flex-col justify-between p-2 overflow-hidden -mt-1 pt-3">
+                    <div class="absolute inset-0 bg-cover bg-center opacity-40 scale-105" style="background-image: url('${packArtUrl}'); filter: blur(2px);"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/90"></div>
+
+                    <div class="relative z-10 text-center pt-0.5">
+                      <span class="text-[7px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/30">
+                        10 CARDS
+                      </span>
+                      <h3 class="text-sm font-black text-white tracking-tight mt-1 leading-tight drop-shadow">
+                        Universal Booster Pack
+                      </h3>
+                    </div>
+
+                    <div class="relative z-10 my-auto flex justify-center py-1">
+                      <img src="${packArtUrl}" alt="Booster Pack" loading="eager" fetchpriority="high" class="h-32 object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)]" />
+                    </div>
+
+                    <div class="relative z-10 text-center pb-0.5">
+                    </div>
+
+                    <div class="pack-crimp-bottom h-4 w-full border-t border-white/20 flex items-center justify-center relative z-20 rounded-b-xl">
+                      <span class="text-[6px] font-black text-white/70 tracking-widest uppercase relative z-10">SINGLE PACK</span>
+                    </div>
                   </div>
 
-                  <div class="relative z-10 text-center pb-0.5">
-                    <span class="text-[7px] font-extrabold text-neutral-300 tracking-wider uppercase bg-black/60 px-2 py-0.5 rounded-full border border-white/10">
-                      10 RANDOM CARDS
-                    </span>
-                  </div>
+                  <div class="foil-overlay foil-sir opacity-60"></div>
+                  <div class="card-glare"></div>
                 </div>
-
-                <div class="pack-crimp-bottom h-5 w-full border-t border-white/20 flex items-center justify-center relative z-20">
-                  <span class="text-[7px] font-black text-white/70 tracking-widest uppercase relative z-10">COMPLETELY RANDOM PULLS</span>
-                </div>
-
-                <div class="foil-overlay foil-sir opacity-75"></div>
-                <div class="card-glare"></div>
               </div>
+            </div>
+
+            <div class="w-full space-y-2">
+              <div class="text-xs text-neutral-400 font-semibold">Contains 10 Cards</div>
+              <button
+                onclick="buyPack('universal_master_pack')"
+                class="w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-2.5 rounded-xl text-xs transition active:scale-95 shadow-xl flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <i class="fa-solid fa-scissors"></i> RIP PACK FOR $10.00
+              </button>
             </div>
           </div>
 
-          <button
-            onclick="buyPack('universal_master_pack')"
-            class="w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-3 rounded-xl text-xs transition active:scale-95 shadow-xl flex items-center justify-center gap-2 min-h-[44px]"
-          >
-            <i class="fa-solid fa-scissors"></i> RIP PACK FOR $10.00
-          </button>
+          <!-- BOOSTER BOX (100 CARDS / 10 PACKS FOR $100) -->
+          <div class="glass-panel rounded-3xl p-5 flex flex-col items-center justify-between shadow-2xl relative overflow-hidden border border-amber-400/40 text-center bg-gradient-to-b from-amber-500/10 via-transparent to-transparent">
+            
+            <div class="absolute top-2 right-2 bg-amber-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full shadow-lg border border-amber-300 uppercase tracking-wider z-20 flex items-center gap-1">
+              <i class="fa-solid fa-box text-xs"></i> 100 CARDS
+            </div>
+
+            <div class="w-full max-w-[220px] mb-3">
+              <div class="pack-3d-wrap w-full h-72 cursor-pointer" onclick="buyPack('universal_master_box')">
+                <div class="pack-3d w-full h-full rounded-2xl overflow-hidden glass-card relative border border-amber-400/60 bg-gradient-to-b from-neutral-900 via-neutral-950 to-black flex flex-col shadow-2xl">
+                  
+                  <div class="pack-crimp-top crimp-part-top h-6 w-full border-b border-amber-400/40 flex items-center justify-between px-2 relative z-20 bg-amber-500/20">
+                    <span class="text-[7px] font-black text-amber-300 uppercase tracking-widest relative z-10">FACTORY SEALED BOX</span>
+                    <div class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] relative z-10"></div>
+                  </div>
+
+                  <div class="crimp-part-bottom relative flex-1 w-full flex flex-col justify-between p-2 overflow-hidden -mt-1 pt-3">
+                    <div class="absolute inset-0 bg-cover bg-center opacity-40 scale-105" style="background-image: url('${boxArtUrl}'); filter: blur(2px);"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-amber-950/20 to-black/90"></div>
+
+                    <div class="relative z-10 text-center pt-0.5">
+                      <span class="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-black px-2 py-0.5 rounded-full border border-amber-300">
+                        BOOSTER BOX
+                      </span>
+                      <h3 class="text-sm font-black text-white tracking-tight mt-1 leading-tight drop-shadow">
+                        Universal Booster Box
+                      </h3>
+                    </div>
+
+                    <div class="relative z-10 my-auto flex justify-center py-1">
+                      <div class="relative">
+                        <img src="${boxArtUrl}" alt="Booster Box" loading="eager" fetchpriority="high" class="h-32 object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)] scale-110" />
+                        <span class="absolute -bottom-1 right-0 bg-black/80 border border-amber-400/60 text-amber-300 text-[8px] font-black px-1.5 py-0.5 rounded-md">
+                          10 PACKS
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="relative z-10 text-center pb-0.5">
+                      <span class="text-[7px] font-extrabold text-amber-300 tracking-wider uppercase bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-400/40">
+                        100 TOTAL CARDS
+                      </span>
+                    </div>
+
+                    <div class="pack-crimp-bottom h-4 w-full border-t border-amber-400/40 flex items-center justify-center relative z-20 bg-amber-500/20 rounded-b-xl">
+                      <span class="text-[6px] font-black text-amber-300 tracking-widest uppercase relative z-10">SEALED DISPLAY BOX</span>
+                    </div>
+                  </div>
+
+                  <div class="foil-overlay foil-gold opacity-80"></div>
+                  <div class="card-glare"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="w-full space-y-2">
+              <div class="text-xs text-amber-300 font-bold flex items-center justify-center gap-1">
+                <i class="fa-solid fa-tags"></i> 100 Cards (10 Booster Packs)
+              </div>
+              <button
+                onclick="buyPack('universal_master_box')"
+                class="w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-2.5 rounded-xl text-xs transition active:scale-95 shadow-xl flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <i class="fa-solid fa-box-open"></i> RIP BOOSTER BOX FOR $100.00
+              </button>
+            </div>
+          </div>
+
         </div>
       `;
 
@@ -1197,7 +1503,6 @@
       const smallImg = card.images?.small || card.images?.large || 'https://images.pokemontcg.io/cardback.png';
       const largeImg = card.images?.large || card.images?.small || 'https://images.pokemontcg.io/cardback.png';
 
-      // Pre-warm both image resolutions in parallel
       GPUImageLoader.preload(smallImg);
       GPUImageLoader.preload(largeImg);
 
@@ -1215,30 +1520,66 @@
       };
     }
 
-    // Completely random 10-card generation without any slot or rarity guarantees
-    function assembleRealisticPack(fetchedCards, setName = 'Universal Master Set') {
-      const pack = [];
-      const totalCards = fetchedCards.length;
+    function assembleRealisticPack(fetchedCards, setName = 'Universal Master Set', count = 10) {
+      if (!fetchedCards || fetchedCards.length === 0) return [];
 
-      for (let i = 0; i < 10; i++) {
-        const randomIndex = Math.floor(Math.random() * totalCards);
-        const randomCard = fetchedCards[randomIndex];
-        pack.push(formatCardObj(randomCard, setName));
+      const isHighRare = (c) => {
+        const r = (c.rarity || '').toLowerCase();
+        return r.includes('illustration') || r.includes('special') || r.includes('secret') || r.includes('hyper') || r.includes('gold') || r.includes('alt art') || r.includes('vmax') || r.includes('vstar');
+      };
+
+      const isRare = (c) => {
+        const r = (c.rarity || '').toLowerCase();
+        return isHighRare(c) || r.includes('rare') || r.includes('ex') || r.includes('holo') || r.includes('v');
+      };
+
+      const getWeight = (card, isRareSlot = false) => {
+        const price = getCardPrice(card);
+        let baseWeight = 1 / Math.pow(Math.max(0.20, price), 0.45);
+        
+        if (isHighRare(card)) {
+          baseWeight *= isRareSlot ? 4.5 : 2.5;
+        } else if (isRare(card)) {
+          baseWeight *= isRareSlot ? 3.0 : 1.8;
+        }
+        return baseWeight;
+      };
+
+      const sampleCard = (isRareSlot = false) => {
+        const weights = fetchedCards.map(c => getWeight(c, isRareSlot));
+        const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+        let rand = Math.random() * totalWeight;
+
+        for (let i = 0; i < fetchedCards.length; i++) {
+          if (rand < weights[i]) {
+            return fetchedCards[i];
+          }
+          rand -= weights[i];
+        }
+        return fetchedCards[Math.floor(Math.random() * fetchedCards.length)];
+      };
+
+      const pack = [];
+      for (let i = 0; i < count; i++) {
+        const isRareSlot = (i >= count - 3);
+        const selectedCard = sampleCard(isRareSlot);
+        pack.push(formatCardObj(selectedCard, setName));
       }
 
       return pack;
     }
 
-    async function buyPack(setId) {
-      const setObj = MASTER_PACK;
+    async function buyPack(productId = 'universal_master_pack') {
+      const productObj = PRODUCTS[productId] || PRODUCTS.universal_master_pack;
 
-      if (coins < setObj.price) {
-        showToast("Not enough cash! Click 'Add Cash' to top up.");
+      if (coins < productObj.price) {
+        showToast("Not enough cash! Click 'Add Cash' at the top to add fake funds.", "error");
         return;
       }
 
-      selectedSetObj = setObj;
+      selectedSetObj = productObj;
       isOpeningPack = false;
+      stopAutoFlip();
 
       document.getElementById('pack-overlay').classList.remove('hidden');
       document.getElementById('pack-loading').classList.remove('hidden');
@@ -1257,59 +1598,184 @@
         if (!success && globalCardPool.length === 0) {
           document.getElementById('pack-loading').classList.add('hidden');
           document.getElementById('pack-overlay').classList.add('hidden');
-          showToast("Failed to fetch cards. Please check connection and try again.");
+          showToast("Failed to fetch card data. Please check connection.", "error");
           return;
         }
       }
 
-      // Deduct pack price in cash
-      coins -= setObj.price;
+      coins -= productObj.price;
       saveState();
 
-      currentPackCards = assembleRealisticPack(globalCardPool, 'Universal Master Set');
+      currentPackCards = assembleRealisticPack(globalCardPool, 'Universal Master Set', productObj.cardCount);
 
-      // Pre-warm all pack images asynchronously without blocking UI
-      GPUImageLoader.preloadBatch(currentPackCards.flatMap(c => [c.image, c.largeImage]));
+      GPUImageLoader.preloadBatch(currentPackCards.slice(0, 15).flatMap(c => [c.image, c.largeImage]));
 
-      const topCrimp = document.getElementById('pack-top-crimp');
-      topCrimp.classList.remove('peel-off-top');
-      const packInner = document.getElementById('sealed-pack-inner');
-      packInner.classList.remove('animate-pack-shake');
+      resetCrimpPeelVisuals();
 
-      const coverArtUrl = setObj.coverArt;
+      const coverArtUrl = productObj.coverArt;
       GPUImageLoader.preload(coverArtUrl);
 
       document.getElementById('pack-loading').classList.add('hidden');
-      document.getElementById('sealed-pack-title').textContent = setObj.name;
-      document.getElementById('sealed-pack-era').textContent = setObj.era;
+      document.getElementById('sealed-pack-title').textContent = productObj.name;
+      document.getElementById('sealed-pack-era').textContent = productObj.era;
+      document.getElementById('sealed-pack-type-label').textContent = `${productObj.typeLabel} • OFFICIAL ODDS`;
       document.getElementById('sealed-pack-art-img').src = coverArtUrl;
       document.getElementById('sealed-pack-bg').style.backgroundImage = `url('${coverArtUrl}')`;
       document.getElementById('pack-sealed-container').classList.remove('hidden');
 
+      const innerPack = document.querySelector('#sealed-pack-inner .pack-3d');
+      if (innerPack) {
+        innerPack.style.transform = 'none';
+      }
+
       init3DHoverPhysics();
     }
 
-    function handlePackTearClick() {
+    // Touch & Swipe Responsive Crimp Peeling Logic
+    function initCrimpPeelEvents() {
+      const crimp = document.getElementById('pack-top-crimp');
+      if (!crimp) return;
+
+      const startDrag = (e) => {
+        if (isOpeningPack) return;
+        isCrimpDragging = true;
+        const touch = e.touches ? e.touches[0] : e;
+        crimpStartX = touch.clientX;
+        crimpStartY = touch.clientY;
+        crimpPeelProgress = 0;
+        lastSoundTickProgress = 0;
+        crimp.classList.add('crimp-tearing');
+      };
+
+      const moveDrag = (e) => {
+        if (!isCrimpDragging || isOpeningPack) return;
+        if (e.cancelable) e.preventDefault();
+        const touch = e.touches ? e.touches[0] : e;
+
+        const deltaX = touch.clientX - crimpStartX;
+        const deltaY = touch.clientY - crimpStartY;
+        
+        const totalDist = Math.max(Math.abs(deltaX), deltaY);
+        const maxDist = 160;
+
+        crimpPeelProgress = Math.min(1, Math.max(0, totalDist / maxDist));
+        updateCrimpPeelVisuals(crimpPeelProgress, deltaX, deltaY);
+
+        if (crimpPeelProgress - lastSoundTickProgress > 0.07) {
+          SoundEngine.playTearTick(crimpPeelProgress);
+          lastSoundTickProgress = crimpPeelProgress;
+          spawnFoilSpark(touch.clientX, touch.clientY);
+        }
+
+        if (crimpPeelProgress >= 0.85) {
+          isCrimpDragging = false;
+          completeCrimpPeel();
+        }
+      };
+
+      const endDrag = () => {
+        if (!isCrimpDragging) return;
+        isCrimpDragging = false;
+        crimp.classList.remove('crimp-tearing');
+        if (crimpPeelProgress < 0.85) {
+          resetCrimpPeelVisuals();
+        }
+      };
+
+      crimp.addEventListener('mousedown', startDrag);
+      window.addEventListener('mousemove', moveDrag);
+      window.addEventListener('mouseup', endDrag);
+
+      crimp.addEventListener('touchstart', startDrag, { passive: false });
+      window.addEventListener('touchmove', moveDrag, { passive: false });
+      window.addEventListener('touchend', endDrag);
+    }
+
+    function updateCrimpPeelVisuals(progress, dx, dy) {
+      const crimp = document.getElementById('pack-top-crimp');
+      const progressBg = document.getElementById('crimp-peel-progress-bg');
+      const badge = document.getElementById('peel-percent-badge');
+      const text = document.getElementById('crimp-instruction-text');
+
+      if (crimp) {
+        const transX = Math.min(60, Math.max(-60, dx * 0.4));
+        const transY = Math.min(30, dy * 0.3);
+        const rot = Math.min(18, Math.max(-18, dx * 0.12));
+        crimp.style.transform = `translate(${transX}px, ${transY}px) rotate(${rot}deg) scaleY(${1 - progress * 0.25})`;
+      }
+
+      if (progressBg) {
+        progressBg.style.width = `${progress * 100}%`;
+      }
+
+      if (badge) {
+        badge.textContent = `${Math.round(progress * 100)}%`;
+      }
+
+      if (text) {
+        text.textContent = progress > 0.4 ? 'KEEP PULLING!' : 'SWIPE TO TEAR';
+      }
+    }
+
+    function resetCrimpPeelVisuals() {
+      crimpPeelProgress = 0;
+      lastSoundTickProgress = 0;
+      const crimp = document.getElementById('pack-top-crimp');
+      const progressBg = document.getElementById('crimp-peel-progress-bg');
+      const badge = document.getElementById('peel-percent-badge');
+      const text = document.getElementById('crimp-instruction-text');
+
+      if (crimp) {
+        crimp.style.transform = 'none';
+        crimp.classList.remove('crimp-flying-off', 'crimp-tearing');
+      }
+      if (progressBg) progressBg.style.width = '0%';
+      if (badge) badge.textContent = '0%';
+      if (text) text.textContent = 'SWIPE TO TEAR';
+    }
+
+    function spawnFoilSpark(x, y) {
+      for (let i = 0; i < 3; i++) {
+        const spark = document.createElement('div');
+        spark.className = 'foil-spark';
+        spark.style.left = `${x}px`;
+        spark.style.top = `${y}px`;
+        const dx = (Math.random() - 0.5) * 60;
+        const dy = (Math.random() - 0.5) * 60;
+        spark.style.setProperty('--dx', `${dx}px`);
+        spark.style.setProperty('--dy', `${dy}px`);
+        document.body.appendChild(spark);
+        setTimeout(() => spark.remove(), 400);
+      }
+    }
+
+    function completeCrimpPeel() {
       if (isOpeningPack) return;
       isOpeningPack = true;
 
-      SoundEngine.playTear();
+      SoundEngine.playFullTear();
+      if (window.confetti) {
+        confetti({ particleCount: 35, spread: 60, origin: { y: 0.35 } });
+      }
 
-      const topCrimp = document.getElementById('pack-top-crimp');
-      const packInner = document.getElementById('sealed-pack-inner');
-
-      packInner.classList.add('animate-pack-shake');
+      const crimp = document.getElementById('pack-top-crimp');
+      if (crimp) {
+        crimp.classList.remove('crimp-tearing');
+        crimp.classList.add('crimp-flying-off');
+      }
 
       setTimeout(() => {
-        topCrimp.classList.add('peel-off-top');
-        setTimeout(() => {
-          document.getElementById('pack-sealed-container').classList.add('hidden');
-          document.getElementById('pack-cards-container').classList.remove('hidden');
-          currentCardIdx = 0;
-          displayCurrentRevealCard();
-          isOpeningPack = false;
-        }, 450);
-      }, 350);
+        document.getElementById('pack-sealed-container').classList.add('hidden');
+        document.getElementById('pack-cards-container').classList.remove('hidden');
+        currentCardIdx = 0;
+        displayCurrentRevealCard();
+        isOpeningPack = false;
+      }, 500);
+    }
+
+    function quickRipPack() {
+      crimpPeelProgress = 1;
+      completeCrimpPeel();
     }
 
     function handleCardClick() {
@@ -1321,7 +1787,6 @@
       const card = currentPackCards[currentCardIdx];
       if (!card) return;
 
-      // Pre-warm next card images immediately
       if (currentPackCards[currentCardIdx + 1]) {
         GPUImageLoader.preload(currentPackCards[currentCardIdx + 1].image);
         GPUImageLoader.preload(currentPackCards[currentCardIdx + 1].largeImage);
@@ -1338,7 +1803,7 @@
       foilOverlay.className = `foil-overlay ${getFoilTypeByRarity(card.rarity)}`;
 
       const viewport = document.getElementById('card-reveal-viewport');
-      if (card.rarity.includes('Special Illustration') || card.rarity.includes('Hyper Rare')) {
+      if (card.rarity.includes('Special Illustration') || card.rarity.includes('Hyper Rare') || card.rarity.includes('Gold') || card.rarity.includes('Illustration Rare')) {
         viewport.classList.add('rare-border-glow');
         SoundEngine.playRareHit();
         if (window.confetti) confetti({ particleCount: 40, spread: 50 });
@@ -1348,6 +1813,41 @@
       }
 
       init3DHoverPhysics();
+    }
+
+    function toggleAutoFlip() {
+      isAutoFlipping = !isAutoFlipping;
+      const btn = document.getElementById('auto-flip-btn');
+      if (isAutoFlipping) {
+        if (btn) {
+          btn.classList.add('bg-amber-400', 'text-black');
+          btn.classList.remove('glass-btn', 'text-white');
+          btn.innerHTML = '<i class="fa-solid fa-pause text-[10px]"></i> Pause Auto';
+        }
+        autoFlipInterval = setInterval(() => {
+          if (currentCardIdx < currentPackCards.length) {
+            vaultCurrentCard();
+          } else {
+            stopAutoFlip();
+          }
+        }, 350);
+      } else {
+        stopAutoFlip();
+      }
+    }
+
+    function stopAutoFlip() {
+      isAutoFlipping = false;
+      if (autoFlipInterval) {
+        clearInterval(autoFlipInterval);
+        autoFlipInterval = null;
+      }
+      const btn = document.getElementById('auto-flip-btn');
+      if (btn) {
+        btn.classList.remove('bg-amber-400', 'text-black');
+        btn.classList.add('glass-btn', 'text-white');
+        btn.innerHTML = '<i class="fa-solid fa-forward text-[10px]"></i> Auto Flip';
+      }
     }
 
     function slideTopCard() {
@@ -1366,52 +1866,141 @@
 
     function nextRevealCard() {
       currentCardIdx++;
-      if (currentCardIdx >= currentPackCards.length) {
-        showToast("Pack completely opened!");
-        document.getElementById('pack-overlay').classList.add('hidden');
-        renderBinder();
-        return;
+      if (currentCardIdx < currentPackCards.length) {
+        displayCurrentRevealCard();
+      } else {
+        stopAutoFlip();
+        closePackModal();
+        if (currentTab === 'binder') renderBinder();
       }
-      displayCurrentRevealCard();
-    }
-
-    function ripCurrentCard(e) {
-      if (e) e.stopPropagation();
-      const card = currentPackCards[currentCardIdx];
-      if (!card) return;
-
-      const gain = card.marketPrice;
-      coins += gain;
-      saveState();
-      SoundEngine.playCoin();
-      showToast(`Sold ${card.name} for +$${gain.toFixed(2)} Cash!`);
-
-      slideTopCard();
     }
 
     function vaultCurrentCard(e) {
       if (e) e.stopPropagation();
       const card = currentPackCards[currentCardIdx];
-      if (!card) return;
+      if (card) {
+        binder.push(card);
+        saveState();
+        slideTopCard();
+      }
+    }
 
-      binder.push(card);
-      saveState();
-      SoundEngine.playSnap();
-      showToast(`Vaulted ${card.name} to Binder!`);
-
-      slideTopCard();
+    function ripCurrentCard(e) {
+      if (e) e.stopPropagation();
+      const card = currentPackCards[currentCardIdx];
+      if (card) {
+        coins += card.marketPrice;
+        saveState();
+        SoundEngine.playCoin();
+        slideTopCard();
+      }
     }
 
     function vaultAllRemainingCards() {
-      let added = 0;
-      for (let i = currentCardIdx; i < currentPackCards.length; i++) {
-        binder.push(currentPackCards[i]);
-        added++;
+      stopAutoFlip();
+      const remaining = currentPackCards.slice(currentCardIdx);
+      if (remaining.length > 0) {
+        binder.push(...remaining);
+        saveState();
+        SoundEngine.playSnap();
       }
-      saveState();
-      SoundEngine.playSnap();
-      showToast(`Vaulted ${added} remaining cards!`);
+      closePackModal();
+      if (currentTab === 'binder') renderBinder();
+    }
+
+    function closePackModal() {
+      stopAutoFlip();
       document.getElementById('pack-overlay').classList.add('hidden');
+      isOpeningPack = false;
+    }
+
+    function openSellBelowModal() {
+      const modal = document.getElementById('sell-below-modal');
+      const input = document.getElementById('sell-below-input');
+      if (input) input.value = sellBelowThreshold;
+      updateSellBelowPreview();
+      modal.classList.remove('hidden');
+    }
+
+    function closeSellBelowModal() {
+      document.getElementById('sell-below-modal').classList.add('hidden');
+    }
+
+    function setSellBelowThreshold(val) {
+      sellBelowThreshold = parseFloat(val) || 1.00;
+      const input = document.getElementById('sell-below-input');
+      if (input) input.value = sellBelowThreshold;
+      updateSellBelowPreview();
+    }
+
+    function updateSellBelowPreview() {
+      const input = document.getElementById('sell-below-input');
+      const previewEl = document.getElementById('sell-below-preview-text');
+      if (!input || !previewEl) return;
+
+      const thresh = parseFloat(input.value) || 0;
+      const matching = binder.filter(c => (c.marketPrice || 0) < thresh);
+      const totalVal = matching.reduce((sum, c) => sum + (c.marketPrice || 0), 0);
+
+      previewEl.innerHTML = `Found <span class="text-amber-400 font-black">${matching.length}</span> cards under $${thresh.toFixed(2)}<br><span class="text-neutral-400 font-normal">Total value:</span> <span class="text-amber-400 font-black">+$${totalVal.toFixed(2)} Cash</span>`;
+    }
+
+    function confirmSellBelowValue() {
+      const input = document.getElementById('sell-below-input');
+      if (input) {
+        sellBelowThreshold = Math.max(0.01, parseFloat(input.value) || 1.00);
+      }
+
+      const matching = binder.filter(c => (c.marketPrice || 0) < sellBelowThreshold);
+      if (matching.length === 0) {
+        closeSellBelowModal();
+        return;
+      }
+
+      const totalVal = matching.reduce((sum, c) => sum + (c.marketPrice || 0), 0);
+      binder = binder.filter(c => (c.marketPrice || 0) >= sellBelowThreshold);
+
+      coins += totalVal;
+      saveState();
+      SoundEngine.playCoin();
+      if (window.confetti) confetti({ particleCount: 35, spread: 40 });
+
+      closeSellBelowModal();
+      renderBinder();
+    }
+
+    function toggleBinderStacking() {
+      isBinderStacking = !isBinderStacking;
+      saveState();
+      renderBinder();
+    }
+
+    function sellAllDuplicates() {
+      if (binder.length === 0) return;
+
+      const seenKeys = new Set();
+      const keptCards = [];
+      let soldCount = 0;
+      let totalCashGained = 0;
+
+      binder.forEach(card => {
+        const key = card.id ? `${card.id}_${card.setName}` : `${card.name}_${card.rarity}_${card.setName}`;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          keptCards.push(card);
+        } else {
+          soldCount++;
+          totalCashGained += (card.marketPrice || 0);
+        }
+      });
+
+      if (soldCount === 0) return;
+
+      binder = keptCards;
+      coins += totalCashGained;
+      saveState();
+      SoundEngine.playCoin();
+      if (window.confetti) confetti({ particleCount: 30, spread: 40 });
       renderBinder();
     }
 
@@ -1427,36 +2016,94 @@
         filtered = filtered.filter(c => c.setName === setFilter);
       }
 
-      filtered.sort((a, b) => {
-        const valA = a.marketPrice || 0;
-        const valB = b.marketPrice || 0;
-        if (sortOption === 'value-desc') return valB - valA;
-        if (sortOption === 'value-asc') return valA - valB;
-        if (sortOption === 'recent') return (b.obtainedAt || 0) - (a.obtainedAt || 0);
-        if (sortOption === 'name') return (a.name || '').localeCompare(b.name || '');
-        return 0;
-      });
+      const stackBtn = document.getElementById('stack-toggle-btn');
+      const stackText = document.getElementById('stack-btn-text');
+      if (stackBtn && stackText) {
+        if (isBinderStacking) {
+          stackBtn.className = "glass-btn px-3 py-2 rounded-xl text-xs font-bold text-amber-300 border border-amber-400/30 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]";
+          stackText.textContent = "Stacking: ON";
+        } else {
+          stackBtn.className = "glass-btn px-3 py-2 rounded-xl text-xs font-bold text-neutral-400 border border-white/10 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]";
+          stackText.textContent = "Stacking: OFF";
+        }
+      }
 
       if (filtered.length === 0) {
+        document.getElementById('binder-stats-text').textContent = "0 Unique Cards • 0 Total Cards";
         grid.innerHTML = `
           <div class="col-span-full text-center py-12 text-neutral-400">
             <i class="fa-solid fa-box-open text-3xl mb-2"></i>
             <p class="text-sm font-bold">No cards in your binder yet.</p>
-            <p class="text-xs">Rip some packs from the Booster Store to build your collection!</p>
+            <p class="text-xs">Rip some packs or booster boxes from the Store to build your collection!</p>
           </div>
         `;
         return;
       }
 
-      grid.innerHTML = filtered.map(card => {
+      let displayItems = [];
+
+      if (isBinderStacking) {
+        const groups = new Map();
+        filtered.forEach(card => {
+          const key = card.id ? `${card.id}_${card.setName}` : `${card.name}_${card.rarity}_${card.setName}`;
+          if (!groups.has(key)) {
+            groups.set(key, []);
+          }
+          groups.get(key).push(card);
+        });
+
+        groups.forEach((groupCards) => {
+          const repCard = groupCards[0];
+          const count = groupCards.length;
+          const totalVal = groupCards.reduce((sum, c) => sum + (c.marketPrice || 0), 0);
+          displayItems.push({
+            type: 'stack',
+            card: repCard,
+            count: count,
+            totalVal: totalVal,
+            items: groupCards
+          });
+        });
+
+        document.getElementById('binder-stats-text').textContent = `${displayItems.length} Unique Cards • ${filtered.length} Total Cards`;
+      } else {
+        displayItems = filtered.map(card => ({
+          type: 'single',
+          card: card,
+          count: 1,
+          totalVal: card.marketPrice || 0,
+          items: [card]
+        }));
+        document.getElementById('binder-stats-text').textContent = `${filtered.length} Total Cards`;
+      }
+
+      displayItems.sort((a, b) => {
+        const valA = a.card.marketPrice || 0;
+        const valB = b.card.marketPrice || 0;
+        if (sortOption === 'value-desc') return valB - valA;
+        if (sortOption === 'value-asc') return valA - valB;
+        if (sortOption === 'recent') return (b.card.obtainedAt || 0) - (a.card.obtainedAt || 0);
+        if (sortOption === 'name') return (a.card.name || '').localeCompare(b.card.name || '');
+        return 0;
+      });
+
+      grid.innerHTML = displayItems.map(item => {
+        const card = item.card;
         const foilClass = getFoilTypeByRarity(card.rarity);
         const effVal = (card.marketPrice || 0).toFixed(2);
         const imgSrc = card.image || card.largeImage;
+        const stackBadge = item.count > 1 ? `
+          <div class="absolute top-1.5 right-1.5 bg-amber-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-amber-300 z-20">
+            x${item.count}
+          </div>
+        ` : '';
+
         return `
           <div class="card-3d-wrap cursor-pointer" onclick="openInspectModal('${card.uniqueId}')">
             <div class="card-3d glass-card rounded-xl overflow-hidden relative border border-white/10 p-1.5 sm:p-2 group hover:border-white/30 transition">
               <div class="card-aspect relative rounded-lg overflow-hidden bg-black mb-1">
                 <img src="${imgSrc}" alt="${escapeHtml(card.name)}" loading="lazy" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+                ${stackBadge}
                 <div class="foil-overlay ${foilClass}"></div>
                 <div class="card-glare"></div>
               </div>
@@ -1477,7 +2124,14 @@
       const card = binder.find(c => c.uniqueId === uniqueId);
       if (!card) return;
 
+      const key = card.id ? `${card.id}_${card.setName}` : `${card.name}_${card.rarity}_${card.setName}`;
+      const stackGroup = binder.filter(c => {
+        const cKey = c.id ? `${c.id}_${c.setName}` : `${c.name}_${c.rarity}_${c.setName}`;
+        return cKey === key;
+      });
+
       selectedInspectedCard = card;
+      selectedInspectedGroup = stackGroup;
 
       const fullImg = card.largeImage || card.image;
       GPUImageLoader.preload(fullImg);
@@ -1487,8 +2141,41 @@
       document.getElementById('inspect-card-rarity').textContent = card.rarity || 'Common';
       document.getElementById('inspect-card-set').textContent = `${card.setName || 'Master Set'} • #${card.number || '000'}`;
 
-      const effVal = (card.marketPrice || 0).toFixed(2);
-      document.getElementById('inspect-card-value').textContent = `$${effVal}`;
+      const count = stackGroup.length;
+      const singleVal = card.marketPrice || 0;
+      const totalVal = stackGroup.reduce((s, c) => s + (c.marketPrice || 0), 0);
+
+      document.getElementById('inspect-card-count-badge').textContent = `Owned: ${count} ${count === 1 ? 'copy' : 'copies'}`;
+      document.getElementById('inspect-card-value').textContent = `$${singleVal.toFixed(2)}`;
+
+      const sellContainer = document.getElementById('inspect-sell-container');
+      if (count > 1) {
+        sellContainer.innerHTML = `
+          <div class="grid grid-cols-2 gap-2 w-full">
+            <button
+              onclick="sellInspectedCard(false)"
+              class="glass-btn hover:bg-white hover:text-black text-white font-extrabold py-2.5 rounded-xl text-xs transition border border-white/15 active:scale-95 min-h-[44px]"
+            >
+              Sell 1 ($${singleVal.toFixed(2)})
+            </button>
+            <button
+              onclick="sellInspectedCard(true)"
+              class="bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-2.5 rounded-xl text-xs transition active:scale-95 shadow-lg min-h-[44px]"
+            >
+              Sell All ${count} ($${totalVal.toFixed(2)})
+            </button>
+          </div>
+        `;
+      } else {
+        sellContainer.innerHTML = `
+          <button
+            onclick="sellInspectedCard(false)"
+            class="w-full glass-btn hover:bg-white hover:text-black text-white font-extrabold py-3 rounded-xl text-xs transition border border-white/15 active:scale-95 min-h-[44px]"
+          >
+            Sell Card for $${singleVal.toFixed(2)} Cash
+          </button>
+        `;
+      }
 
       const inspectWrapper = document.getElementById('inspect-slab-wrapper');
       if (inspectWrapper) {
@@ -1499,8 +2186,6 @@
       const foilOverlay = document.getElementById('inspect-foil-overlay');
       foilOverlay.className = `foil-overlay ${getFoilTypeByRarity(card.rarity)}`;
 
-      document.getElementById('inspect-sell-btn').innerHTML = `<i class="fa-solid fa-fire text-amber-400 mr-1"></i> Sell for <i class="fa-solid fa-sack-dollar text-amber-400 mx-1"></i> $${effVal} Cash`;
-
       document.getElementById('inspect-modal').classList.remove('hidden');
       init3DHoverPhysics();
     }
@@ -1508,242 +2193,167 @@
     function closeInspectModal() {
       document.getElementById('inspect-modal').classList.add('hidden');
       selectedInspectedCard = null;
+      selectedInspectedGroup = [];
     }
 
-    function sellInspectedCard() {
-      if (!selectedInspectedCard) return;
-      const card = selectedInspectedCard;
-      const saleVal = card.marketPrice || 0;
+    function sellInspectedCard(sellAll = false) {
+      if (!selectedInspectedCard || selectedInspectedGroup.length === 0) return;
 
-      coins += saleVal;
-      binder = binder.filter(c => c.uniqueId !== card.uniqueId);
+      if (sellAll) {
+        const totalVal = selectedInspectedGroup.reduce((s, c) => s + (c.marketPrice || 0), 0);
+        const idsToRemove = new Set(selectedInspectedGroup.map(c => c.uniqueId));
+        binder = binder.filter(c => !idsToRemove.has(c.uniqueId));
+        coins += totalVal;
+        showToast(`Sold ${selectedInspectedGroup.length} copies for +$${totalVal.toFixed(2)}`);
+      } else {
+        const cardToRemove = selectedInspectedGroup[0];
+        binder = binder.filter(c => c.uniqueId !== cardToRemove.uniqueId);
+        coins += (cardToRemove.marketPrice || 0);
+        showToast(`Sold 1 copy for +$${(cardToRemove.marketPrice || 0).toFixed(2)}`);
+      }
+
       saveState();
-
       SoundEngine.playCoin();
-      showToast(`Sold ${card.name} for $${saleVal.toFixed(2)} Cash!`);
       closeInspectModal();
       renderBinder();
     }
 
     async function handleSearch(e) {
       if (e) e.preventDefault();
-      const query = document.getElementById('search-input').value.trim();
+      const query = document.getElementById('search-input')?.value.trim();
       if (!query) return;
 
-      const resultsGrid = document.getElementById('search-results-grid');
       const header = document.getElementById('search-results-header');
-      header.classList.add('hidden');
+      const title = document.getElementById('search-count-title');
+      const grid = document.getElementById('search-results-grid');
 
-      resultsGrid.innerHTML = `
-        <div class="col-span-full text-center py-12">
-          <i class="fa-solid fa-spinner text-3xl text-amber-400 animate-spin mb-3"></i>
-          <p class="text-xs text-neutral-400">Searching global Pokémon TCG database for "${escapeHtml(query)}"...</p>
-        </div>
-      `;
-
-      try {
-        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"*${encodeURIComponent(query)}*"&pageSize=30`);
-        const data = await res.json();
-        if (data.data && data.data.length > 0) {
-          searchResultsList = data.data;
-          renderSearchResults(data.data);
-        } else {
-          resultsGrid.innerHTML = `
-            <div class="col-span-full text-center py-12 text-neutral-400">
-              <i class="fa-solid fa-magnifying-glass text-3xl mb-2"></i>
-              <p class="text-xs font-bold text-white">No cards found matching "${escapeHtml(query)}"</p>
-            </div>
-          `;
-        }
-      } catch(err) {
-        resultsGrid.innerHTML = `
-          <div class="col-span-full text-center py-12 text-neutral-400">
-            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 text-amber-400"></i>
-            <p class="text-xs font-bold text-white">Search failed. Check your internet connection.</p>
+      if (grid) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <i class="fa-solid fa-spinner text-3xl text-amber-400 animate-spin mb-3"></i>
+            <p class="text-xs font-bold text-white">Searching Pokémon TCG Database...</p>
           </div>
         `;
       }
+
+      try {
+        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"*${encodeURIComponent(query)}*"&pageSize=30`);
+        if (res.ok) {
+          const data = await res.json();
+          searchResultsList = data.data || [];
+          renderSearchResults();
+        } else {
+          if (grid) grid.innerHTML = '<div class="col-span-full text-center text-xs text-neutral-400 py-8">No matching cards found.</div>';
+        }
+      } catch(err) {
+        if (grid) grid.innerHTML = '<div class="col-span-full text-center text-xs text-amber-400 py-8">Search error. Please try again.</div>';
+      }
     }
 
-    async function renderSearchResults(cards) {
+    function renderSearchResults() {
       const header = document.getElementById('search-results-header');
-      const countTitle = document.getElementById('search-count-title');
-      const resultsGrid = document.getElementById('search-results-grid');
+      const title = document.getElementById('search-count-title');
+      const grid = document.getElementById('search-results-grid');
 
-      header.classList.remove('hidden');
-      countTitle.textContent = `Found ${cards.length} Pokémon Cards`;
+      if (header) header.classList.remove('hidden');
+      if (title) title.textContent = `Found ${searchResultsList.length} Cards`;
 
-      // Pre-warm search card images in parallel background pool
-      const rawUrls = cards.map(c => c.images?.small || c.images?.large || 'https://images.pokemontcg.io/cardback.png');
-      GPUImageLoader.preloadBatch(rawUrls);
+      if (!grid) return;
 
-      resultsGrid.innerHTML = cards.map((card, idx) => {
-        const price = getCardPrice(card);
-        const cardImg = rawUrls[idx];
+      if (searchResultsList.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center text-xs text-neutral-400 py-8">No Pokémon cards match your search.</div>';
+        return;
+      }
+
+      grid.innerHTML = searchResultsList.map(card => {
+        const formatted = formatCardObj(card, card.set?.name || 'Master Set');
+        const price = formatted.marketPrice;
+        const foilClass = getFoilTypeByRarity(formatted.rarity);
+
         return `
-          <div class="glass-card rounded-xl p-1.5 sm:p-2 border border-white/10 flex flex-col justify-between">
-            <div class="card-aspect relative rounded-lg overflow-hidden bg-black mb-1">
-              <img src="${cardImg}" alt="${escapeHtml(card.name)}" loading="lazy" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+          <div class="card-3d-wrap">
+            <div class="card-3d glass-card rounded-xl overflow-hidden relative border border-white/10 p-2 flex flex-col justify-between h-full">
+              <div>
+                <div class="card-aspect relative rounded-lg overflow-hidden bg-black mb-1.5">
+                  <img src="${formatted.image}" alt="${escapeHtml(formatted.name)}" loading="lazy" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+                  <div class="foil-overlay ${foilClass}"></div>
+                  <div class="card-glare"></div>
+                </div>
+                <div class="text-left">
+                  <div class="text-xs font-black text-white truncate">${escapeHtml(formatted.name)}</div>
+                  <div class="text-[9px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(formatted.rarity || 'Common')}</div>
+                  <div class="text-xs font-black text-amber-400 mt-0.5">$${price.toFixed(2)}</div>
+                </div>
+              </div>
+              <button onclick="addSearchCardToBinder('${card.id}')" class="w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-1.5 rounded-lg text-[10px] mt-2 transition active:scale-95 flex items-center justify-center gap-1">
+                <i class="fa-solid fa-plus"></i> Add to Binder
+              </button>
             </div>
-            <div class="text-left mb-1.5 px-0.5">
-              <div class="text-[11px] sm:text-xs font-black text-white truncate leading-tight">${escapeHtml(card.name)}</div>
-              <div class="text-[8px] sm:text-[9px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(card.rarity || 'Common')}</div>
-              <div class="text-xs sm:text-sm font-black text-amber-400 mt-0.5">$${price.toFixed(2)}</div>
-            </div>
-            <button
-              onclick="addSearchCardToBinder('${card.id}')"
-              class="w-full bg-white hover:bg-neutral-200 text-black font-extrabold py-1.5 rounded-lg text-[10px] transition active:scale-95 shadow min-h-[34px]"
-            >
-              + Vault Card
-            </button>
           </div>
         `;
       }).join('');
+      init3DHoverPhysics();
     }
 
     function addSearchCardToBinder(cardId) {
       const card = searchResultsList.find(c => c.id === cardId);
       if (!card) return;
-
       const formatted = formatCardObj(card, card.set?.name || 'Master Set');
       binder.push(formatted);
       saveState();
       SoundEngine.playSnap();
-      showToast(`Added ${formatted.name} to your Binder!`);
+      showToast(`Added ${formatted.name} to binder!`);
     }
 
-    // 3D Gyro/Mouse Hover Physics
+    // 3D Hover & Physics Effect
     function init3DHoverPhysics() {
-      const elements = document.querySelectorAll('.card-3d-wrap, .pack-3d-wrap');
+      document.querySelectorAll('.card-3d-wrap, .pack-3d-wrap').forEach(wrap => {
+        const inner = wrap.querySelector('.card-3d, .pack-3d');
+        if (!inner) return;
 
-      elements.forEach(wrap => {
-        const card = wrap.querySelector('.card-3d, .pack-3d');
-        if (!card) return;
-
-        const handleMove = (x, y, rect) => {
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-
-          const mouseX = x - centerX;
-          const mouseY = y - centerY;
-
-          const rotateX = (mouseY / (rect.height / 2)) * -18;
-          const rotateY = (mouseX / (rect.width / 2)) * 18;
-
-          const pointerX = ((x - rect.left) / rect.width) * 100;
-          const pointerY = ((y - rect.top) / rect.height) * 100;
-
-          card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-          card.style.setProperty('--pointer-x', `${pointerX}%`);
-          card.style.setProperty('--pointer-y', `${pointerY}%`);
-        };
-
-        wrap.onmousemove = (e) => {
+        const handleMove = (e) => {
+          if (wrap.closest('#sealed-pack-inner')) return;
           const rect = wrap.getBoundingClientRect();
-          handleMove(e.clientX, e.clientY, rect);
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+          const x = clientX - rect.left;
+          const y = clientY - rect.top;
+
+          const percentX = (x / rect.width) * 100;
+          const percentY = (y / rect.height) * 100;
+
+          const rotateX = ((percentY - 50) / 50) * -12;
+          const rotateY = ((percentX - 50) / 50) * 12;
+
+          inner.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+          inner.style.setProperty('--pointer-x', `${percentX}`);
+          inner.style.setProperty('--pointer-y', `${percentY}`);
         };
 
-        wrap.ontouchmove = (e) => {
-          if (e.touches && e.touches[0]) {
-            const rect = wrap.getBoundingClientRect();
-            handleMove(e.touches[0].clientX, e.touches[0].clientY, rect);
-          }
+        const handleLeave = () => {
+          inner.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+          inner.style.setProperty('--pointer-x', '50');
+          inner.style.setProperty('--pointer-y', '50');
         };
 
-        const resetTilt = () => {
-          card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-          card.style.setProperty('--pointer-x', '50%');
-          card.style.setProperty('--pointer-y', '50%');
-        };
-
-        wrap.onmouseleave = resetTilt;
-        wrap.ontouchend = resetTilt;
+        wrap.onmousemove = handleMove;
+        wrap.onmouseleave = handleLeave;
+        wrap.ontouchmove = handleMove;
+        wrap.ontouchend = handleLeave;
       });
     }
 
-    // Touch Drag & Swipe-Up to Vault Logic
-    function setupTouchSwipe() {
-      const viewport = document.getElementById('card-reveal-viewport');
-      const cardEl = document.getElementById('holo-card-element');
-      if (!viewport || !cardEl) return;
-
-      let startX = 0;
-      let startY = 0;
-      let currentX = 0;
-      let currentY = 0;
-      let isDragging = false;
-
-      viewport.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches[0]) {
-          startX = e.touches[0].clientX;
-          startY = e.touches[0].clientY;
-          isDragging = true;
-          currentX = 0;
-          currentY = 0;
-          cardEl.style.transition = 'none';
-        }
-      }, { passive: true });
-
-      viewport.addEventListener('touchmove', (e) => {
-        if (!isDragging || !e.touches || !e.touches[0]) return;
-        currentX = e.touches[0].clientX - startX;
-        currentY = e.touches[0].clientY - startY;
-
-        // Interactive visual drag response when swiping upward
-        if (currentY < 0) {
-          const rot = currentX * 0.08;
-          cardEl.style.transform = `translate(${currentX * 0.4}px, ${currentY}px) rotate(${rot}deg) scale(${Math.max(0.85, 1 + currentY / 800)})`;
-          cardEl.style.opacity = Math.max(0.3, 1 + currentY / 400);
-        }
-      }, { passive: true });
-
-      viewport.addEventListener('touchend', (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-
-        cardEl.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease';
-
-        // Check if swiped up beyond swipe threshold
-        if (currentY < -50) {
-          isSwipingVault = true;
-          cardEl.style.transform = `translate(${currentX * 0.5}px, -140%) rotate(${currentX * 0.1}deg) scale(0.8)`;
-          cardEl.style.opacity = '0';
-
-          setTimeout(() => {
-            cardEl.style.transition = '';
-            cardEl.style.transform = '';
-            cardEl.style.opacity = '1';
-            vaultCurrentCard();
-            setTimeout(() => { isSwipingVault = false; }, 200);
-          }, 200);
-        } else {
-          // Reset card back to default position
-          cardEl.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-          cardEl.style.opacity = '1';
-        }
-
-        startX = 0;
-        startY = 0;
-        currentX = 0;
-        currentY = 0;
-      }, { passive: true });
-    }
-
-    // Initialization on load
-    window.onload = async function() {
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
       updateUIHeader();
-      await renderPackStore();
-      setupTouchSwipe();
-
-      // Pre-warm cover art & cardback instantly
-      GPUImageLoader.preload(MASTER_PACK.coverArt);
-      GPUImageLoader.preload('https://images.pokemontcg.io/cardback.png');
-
-      // Pre-fetch cards in background if pool is small
-      if (globalCardPool.length < 40) {
-        fetchCardPoolWithRetry(3, null);
+      renderPackStore();
+      initCrimpPeelEvents();
+      
+      if (globalCardPool.length === 0) {
+        fetchCardPoolWithRetry(3);
       }
-    };
+    });
   </script>
 </body>
 </html>
