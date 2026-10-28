@@ -262,42 +262,25 @@
     }
 
     #pack-top-crimp {
-      transform-origin: top left;
-      transition: transform 0.05s linear;
+      transform: none !important;
     }
 
     .crimp-tearing {
       box-shadow: 0 4px 20px rgba(251, 191, 36, 0.6);
     }
 
-    /* Realistic Card / Foil Crimp Falling Off Animation */
+    /* Fade Animation */
     @keyframes crimpFallOff {
       0% {
-        transform: translate(0, 0) rotate(0deg) rotateX(0deg) rotateY(0deg) scale(1);
         opacity: 1;
-        filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
-      }
-      15% {
-        transform: translate(12px, -22px) rotate(-14deg) rotateX(25deg) rotateY(-15deg) scale(1.04);
-        opacity: 1;
-        filter: drop-shadow(0 12px 25px rgba(251,191,36,0.8));
-      }
-      40% {
-        transform: translate(45px, 90px) rotate(35deg) rotateX(70deg) rotateY(40deg) scale(0.95);
-        opacity: 0.95;
-      }
-      70% {
-        transform: translate(85px, 260px) rotate(78deg) rotateX(140deg) rotateY(90deg) scale(0.85);
-        opacity: 0.6;
       }
       100% {
-        transform: translate(130px, 480px) rotate(115deg) rotateX(210deg) rotateY(150deg) scale(0.6);
         opacity: 0;
       }
     }
 
     .crimp-flying-off {
-      animation: crimpFallOff 0.52s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+      animation: crimpFallOff 0.52s linear forwards !important;
       pointer-events: none;
     }
 
@@ -632,15 +615,15 @@
 
       <!-- Card Container Stack -->
       <div id="card-reveal-viewport"
-        class="w-[82vw] sm:w-[300px] card-aspect max-h-[60vh] relative rounded-2xl card-3d-wrap cursor-pointer my-1.5"
-        onclick="handleCardClick()"
+        class="w-[82vw] sm:w-[300px] card-aspect max-h-[60vh] relative rounded-2xl card-3d-wrap cursor-pointer my-1.5 touch-none"
+        onclick="handleCardClick(event)"
       >
         <div id="holo-card-element" class="w-full h-full card-3d relative rounded-2xl overflow-hidden shadow-2xl bg-black">
           <img id="reveal-card-img" src="" alt="Card" decoding="async" class="w-full h-full object-contain bg-black" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
           <div id="reveal-foil-overlay" class="foil-overlay"></div>
           <div class="card-glare"></div>
 
-          <div class="absolute bottom-2 left-2 right-2 glass-panel rounded-xl p-2 border border-white/15 z-20 flex justify-between items-center text-left shadow-2xl">
+          <div class="absolute bottom-2 left-2 right-2 glass-panel rounded-xl p-2 border border-white/15 z-20 flex justify-between items-center text-left shadow-2xl pointer-events-none">
             <div class="min-w-0 pr-2">
               <div id="reveal-card-name" class="text-xs font-black text-white truncate">Charizard ex</div>
               <div id="reveal-card-rarity" class="text-[9px] text-neutral-300 font-bold truncate">Special Illustration Rare</div>
@@ -652,8 +635,12 @@
         </div>
       </div>
 
-      <div class="text-[10px] text-neutral-400 my-1 font-semibold tracking-wider flex items-center justify-center gap-1">
-        <i class="fa-solid fa-hand-pointer text-amber-400"></i> Tap card or swipe to vault
+      <div class="text-[10px] text-neutral-400 my-1 font-semibold tracking-wider flex items-center justify-center gap-2 flex-wrap">
+        <span class="flex items-center gap-1 text-emerald-400 font-bold"><i class="fa-solid fa-arrow-up"></i> Swipe Up: Vault</span>
+        <span class="text-neutral-600">•</span>
+        <span class="flex items-center gap-1 text-amber-400 font-bold"><i class="fa-solid fa-arrow-down"></i> Swipe Down: Sell</span>
+        <span class="text-neutral-600">•</span>
+        <span class="flex items-center gap-1 text-neutral-300"><i class="fa-solid fa-hand-pointer text-amber-400"></i> Tap/Tilt</span>
       </div>
 
       <div class="flex items-center gap-2 w-full max-w-[340px] mt-1.5">
@@ -1103,9 +1090,9 @@
     let selectedInspectedGroup = [];
     let searchResultsList = [];
     let isOpeningPack = false;
-    let isSwipingVault = false;
     let autoFlipInterval = null;
     let isAutoFlipping = false;
+    let justSwiped = false;
 
     // Crimp Tear Interaction State
     let isCrimpDragging = false;
@@ -1698,10 +1685,7 @@
       const text = document.getElementById('crimp-instruction-text');
 
       if (crimp) {
-        const transX = Math.min(60, Math.max(-60, dx * 0.4));
-        const transY = Math.min(30, dy * 0.3);
-        const rot = Math.min(18, Math.max(-18, dx * 0.12));
-        crimp.style.transform = `translate(${transX}px, ${transY}px) rotate(${rot}deg) scaleY(${1 - progress * 0.25})`;
+        crimp.style.transform = 'none';
       }
 
       if (progressBg) {
@@ -1778,9 +1762,12 @@
       completeCrimpPeel();
     }
 
-    function handleCardClick() {
-      if (isSwipingVault) return;
-      vaultCurrentCard();
+    function handleCardClick(e) {
+      if (justSwiped) {
+        justSwiped = false;
+        return;
+      }
+      vaultCurrentCard(e);
     }
 
     function displayCurrentRevealCard() {
@@ -1857,6 +1844,7 @@
         cardEl.classList.add('card-slide-off');
         setTimeout(() => {
           cardEl.classList.remove('card-slide-off');
+          cardEl.style.transform = 'none';
           nextRevealCard();
         }, 220);
       } else {
@@ -2101,16 +2089,19 @@
         return `
           <div class="card-3d-wrap cursor-pointer" onclick="openInspectModal('${card.uniqueId}')">
             <div class="card-3d glass-card rounded-xl overflow-hidden relative border border-white/10 p-1.5 sm:p-2 group hover:border-white/30 transition">
+              ${stackBadge}
               <div class="card-aspect relative rounded-lg overflow-hidden bg-black mb-1">
                 <img src="${imgSrc}" alt="${escapeHtml(card.name)}" loading="lazy" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
-                ${stackBadge}
                 <div class="foil-overlay ${foilClass}"></div>
                 <div class="card-glare"></div>
               </div>
-              <div class="text-left px-0.5">
-                <div class="text-[11px] sm:text-xs font-black text-white truncate leading-tight">${escapeHtml(card.name)}</div>
-                <div class="text-[8px] sm:text-[9px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(card.rarity || 'Common')}</div>
-                <div class="text-xs sm:text-sm font-black text-amber-400 mt-0.5">$${effVal}</div>
+              <div class="text-left">
+                <div class="text-[11px] font-black text-white truncate">${escapeHtml(card.name)}</div>
+                <div class="text-[9px] text-neutral-400 font-semibold truncate">${escapeHtml(card.rarity)}</div>
+                <div class="flex items-center justify-between mt-1">
+                  <span class="text-[10px] font-black text-amber-400 bg-black/60 px-1.5 py-0.5 rounded border border-amber-400/20">$${effVal}</span>
+                  <span class="text-[8px] text-neutral-500 font-mono truncate max-w-[60px]">${escapeHtml(card.setName)}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -2121,72 +2112,69 @@
     }
 
     function openInspectModal(uniqueId) {
-      const card = binder.find(c => c.uniqueId === uniqueId);
-      if (!card) return;
+      let targetCard = null;
+      let groupCards = [];
 
-      const key = card.id ? `${card.id}_${card.setName}` : `${card.name}_${card.rarity}_${card.setName}`;
-      const stackGroup = binder.filter(c => {
-        const cKey = c.id ? `${c.id}_${c.setName}` : `${c.name}_${c.rarity}_${c.setName}`;
-        return cKey === key;
-      });
-
-      selectedInspectedCard = card;
-      selectedInspectedGroup = stackGroup;
-
-      const fullImg = card.largeImage || card.image;
-      GPUImageLoader.preload(fullImg);
-
-      document.getElementById('inspect-card-img').src = fullImg;
-      document.getElementById('inspect-card-name').textContent = card.name;
-      document.getElementById('inspect-card-rarity').textContent = card.rarity || 'Common';
-      document.getElementById('inspect-card-set').textContent = `${card.setName || 'Master Set'} • #${card.number || '000'}`;
-
-      const count = stackGroup.length;
-      const singleVal = card.marketPrice || 0;
-      const totalVal = stackGroup.reduce((s, c) => s + (c.marketPrice || 0), 0);
-
-      document.getElementById('inspect-card-count-badge').textContent = `Owned: ${count} ${count === 1 ? 'copy' : 'copies'}`;
-      document.getElementById('inspect-card-value').textContent = `$${singleVal.toFixed(2)}`;
-
-      const sellContainer = document.getElementById('inspect-sell-container');
-      if (count > 1) {
-        sellContainer.innerHTML = `
-          <div class="grid grid-cols-2 gap-2 w-full">
-            <button
-              onclick="sellInspectedCard(false)"
-              class="glass-btn hover:bg-white hover:text-black text-white font-extrabold py-2.5 rounded-xl text-xs transition border border-white/15 active:scale-95 min-h-[44px]"
-            >
-              Sell 1 ($${singleVal.toFixed(2)})
-            </button>
-            <button
-              onclick="sellInspectedCard(true)"
-              class="bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-2.5 rounded-xl text-xs transition active:scale-95 shadow-lg min-h-[44px]"
-            >
-              Sell All ${count} ($${totalVal.toFixed(2)})
-            </button>
-          </div>
-        `;
+      if (isBinderStacking) {
+        const found = binder.find(c => c.uniqueId === uniqueId);
+        if (found) {
+          const key = found.id ? `${found.id}_${found.setName}` : `${found.name}_${found.rarity}_${found.setName}`;
+          groupCards = binder.filter(c => (c.id ? `${c.id}_${c.setName}` : `${c.name}_${c.rarity}_${c.setName}`) === key);
+          targetCard = groupCards[0];
+        }
       } else {
-        sellContainer.innerHTML = `
-          <button
-            onclick="sellInspectedCard(false)"
-            class="w-full glass-btn hover:bg-white hover:text-black text-white font-extrabold py-3 rounded-xl text-xs transition border border-white/15 active:scale-95 min-h-[44px]"
-          >
-            Sell Card for $${singleVal.toFixed(2)} Cash
-          </button>
-        `;
+        targetCard = binder.find(c => c.uniqueId === uniqueId);
+        if (targetCard) groupCards = [targetCard];
       }
 
-      const inspectWrapper = document.getElementById('inspect-slab-wrapper');
-      if (inspectWrapper) {
-        inspectWrapper.style.setProperty('--pointer-x', '50');
-        inspectWrapper.style.setProperty('--pointer-y', '50');
+      if (!targetCard) return;
+
+      selectedInspectedCard = targetCard;
+      selectedInspectedGroup = groupCards;
+
+      const modal = document.getElementById('inspect-modal');
+      const img = document.getElementById('inspect-card-img');
+      const foil = document.getElementById('inspect-foil-overlay');
+      const name = document.getElementById('inspect-card-name');
+      const rarity = document.getElementById('inspect-card-rarity');
+      const setEl = document.getElementById('inspect-card-set');
+      const valEl = document.getElementById('inspect-card-value');
+      const countBadge = document.getElementById('inspect-card-count-badge');
+      const sellContainer = document.getElementById('inspect-sell-container');
+
+      const foilType = getFoilTypeByRarity(targetCard.rarity);
+      
+      if (img) img.src = targetCard.largeImage || targetCard.image;
+      if (foil) foil.className = `foil-overlay ${foilType}`;
+      if (name) name.textContent = targetCard.name;
+      if (rarity) rarity.textContent = targetCard.rarity;
+      if (setEl) setEl.textContent = `${targetCard.setName} • #${targetCard.number || '000'}`;
+      if (valEl) valEl.textContent = `$${(targetCard.marketPrice || 0).toFixed(2)}`;
+      if (countBadge) countBadge.textContent = `Owned: ${groupCards.length}`;
+
+      if (sellContainer) {
+        if (groupCards.length > 1) {
+          sellContainer.innerHTML = `
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="sellSingleInspectedCard('${targetCard.uniqueId}')" class="glass-btn hover:bg-neutral-800 text-amber-400 border border-amber-400/30 font-extrabold py-2.5 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5 min-h-[42px]">
+                <i class="fa-solid fa-dollar-sign"></i> Sell 1 for $${(targetCard.marketPrice || 0).toFixed(2)}
+              </button>
+              <button onclick="sellGroupInspectedCards()" class="bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-2.5 rounded-xl text-xs transition active:scale-95 shadow-lg flex items-center justify-center gap-1.5 min-h-[42px]">
+                <i class="fa-solid fa-broom"></i> Sell All (${groupCards.length}) for $${(groupCards.length * (targetCard.marketPrice || 0)).toFixed(2)}
+              </button>
+            </div>
+          `;
+        } else {
+          sellContainer.innerHTML = `
+            <button onclick="sellSingleInspectedCard('${targetCard.uniqueId}')" class="w-full bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-2.5 rounded-xl text-xs transition active:scale-95 shadow-lg flex items-center justify-center gap-1.5 min-h-[42px]">
+              <i class="fa-solid fa-dollar-sign"></i> SELL CARD FOR $${(targetCard.marketPrice || 0).toFixed(2)}
+            </button>
+          `;
+        }
       }
 
-      const foilOverlay = document.getElementById('inspect-foil-overlay');
-      foilOverlay.className = `foil-overlay ${getFoilTypeByRarity(card.rarity)}`;
-
-      document.getElementById('inspect-modal').classList.remove('hidden');
+      modal.classList.remove('hidden');
+      SoundEngine.playSnap();
       init3DHoverPhysics();
     }
 
@@ -2196,22 +2184,32 @@
       selectedInspectedGroup = [];
     }
 
-    function sellInspectedCard(sellAll = false) {
-      if (!selectedInspectedCard || selectedInspectedGroup.length === 0) return;
-
-      if (sellAll) {
-        const totalVal = selectedInspectedGroup.reduce((s, c) => s + (c.marketPrice || 0), 0);
-        const idsToRemove = new Set(selectedInspectedGroup.map(c => c.uniqueId));
-        binder = binder.filter(c => !idsToRemove.has(c.uniqueId));
-        coins += totalVal;
-        showToast(`Sold ${selectedInspectedGroup.length} copies for +$${totalVal.toFixed(2)}`);
-      } else {
-        const cardToRemove = selectedInspectedGroup[0];
-        binder = binder.filter(c => c.uniqueId !== cardToRemove.uniqueId);
-        coins += (cardToRemove.marketPrice || 0);
-        showToast(`Sold 1 copy for +$${(cardToRemove.marketPrice || 0).toFixed(2)}`);
+    function sellSingleInspectedCard(uniqueId) {
+      const idx = binder.findIndex(c => c.uniqueId === uniqueId);
+      if (idx !== -1) {
+        const sold = binder.splice(idx, 1)[0];
+        coins += (sold.marketPrice || 0);
+        saveState();
+        SoundEngine.playCoin();
+        closeInspectModal();
+        renderBinder();
       }
+    }
 
+    function sellGroupInspectedCards() {
+      if (!selectedInspectedGroup || selectedInspectedGroup.length === 0) return;
+      const idsToRemove = new Set(selectedInspectedGroup.map(c => c.uniqueId));
+      let totalValue = 0;
+
+      binder = binder.filter(c => {
+        if (idsToRemove.has(c.uniqueId)) {
+          totalValue += (c.marketPrice || 0);
+          return false;
+        }
+        return true;
+      });
+
+      coins += totalValue;
       saveState();
       SoundEngine.playCoin();
       closeInspectModal();
@@ -2220,18 +2218,19 @@
 
     async function handleSearch(e) {
       if (e) e.preventDefault();
-      const query = document.getElementById('search-input')?.value.trim();
+      const queryInput = document.getElementById('search-input');
+      const query = (queryInput?.value || '').trim();
       if (!query) return;
 
-      const header = document.getElementById('search-results-header');
-      const title = document.getElementById('search-count-title');
       const grid = document.getElementById('search-results-grid');
+      const header = document.getElementById('search-results-header');
+      const countTitle = document.getElementById('search-count-title');
 
       if (grid) {
         grid.innerHTML = `
-          <div class="col-span-full text-center py-12">
+          <div class="col-span-full text-center py-12 text-neutral-400">
             <i class="fa-solid fa-spinner text-3xl text-amber-400 animate-spin mb-3"></i>
-            <p class="text-xs font-bold text-white">Searching Pokémon TCG Database...</p>
+            <p class="text-sm font-bold">Searching Pokémon TCG Database...</p>
           </div>
         `;
       }
@@ -2240,120 +2239,229 @@
         const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"*${encodeURIComponent(query)}*"&pageSize=30`);
         if (res.ok) {
           const data = await res.json();
-          searchResultsList = data.data || [];
-          renderSearchResults();
-        } else {
-          if (grid) grid.innerHTML = '<div class="col-span-full text-center text-xs text-neutral-400 py-8">No matching cards found.</div>';
+          searchResultsList = (data.data || []).map(c => formatCardObj(c, c.set?.name || 'Search Results'));
+          
+          if (header && countTitle) {
+            header.classList.remove('hidden');
+            countTitle.textContent = `Found ${searchResultsList.length} Cards`;
+          }
+
+          if (searchResultsList.length === 0) {
+            if (grid) {
+              grid.innerHTML = `
+                <div class="col-span-full text-center py-12 text-neutral-400">
+                  <i class="fa-solid fa-magnifying-glass text-3xl mb-2"></i>
+                  <p class="text-sm font-bold">No cards found matching "${escapeHtml(query)}"</p>
+                </div>
+              `;
+            }
+            return;
+          }
+
+          if (grid) {
+            grid.innerHTML = searchResultsList.map(card => {
+              const foilClass = getFoilTypeByRarity(card.rarity);
+              return `
+                <div class="card-3d-wrap">
+                  <div class="card-3d glass-card rounded-xl overflow-hidden relative border border-white/10 p-1.5 sm:p-2 flex flex-col justify-between h-full">
+                    <div class="card-aspect relative rounded-lg overflow-hidden bg-black mb-1">
+                      <img src="${card.image}" alt="${escapeHtml(card.name)}" loading="lazy" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
+                      <div class="foil-overlay ${foilClass}"></div>
+                      <div class="card-glare"></div>
+                    </div>
+                    <div class="text-left flex-1 flex flex-col justify-between">
+                      <div>
+                        <div class="text-[11px] font-black text-white truncate">${escapeHtml(card.name)}</div>
+                        <div class="text-[9px] text-neutral-400 font-semibold truncate">${escapeHtml(card.rarity)}</div>
+                      </div>
+                      <div class="mt-2 pt-2 border-t border-white/10 flex items-center justify-between">
+                        <span class="text-[10px] font-black text-amber-400">$${card.marketPrice.toFixed(2)}</span>
+                        <button onclick="addSearchCardToBinder('${card.id}')" class="bg-amber-400 hover:bg-amber-300 text-black text-[9px] font-black px-2 py-1 rounded-lg transition active:scale-95 flex items-center gap-1">
+                          <i class="fa-solid fa-plus"></i> Vault
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+            init3DHoverPhysics();
+          }
         }
       } catch(err) {
-        if (grid) grid.innerHTML = '<div class="col-span-full text-center text-xs text-amber-400 py-8">Search error. Please try again.</div>';
-      }
-    }
-
-    function renderSearchResults() {
-      const header = document.getElementById('search-results-header');
-      const title = document.getElementById('search-count-title');
-      const grid = document.getElementById('search-results-grid');
-
-      if (header) header.classList.remove('hidden');
-      if (title) title.textContent = `Found ${searchResultsList.length} Cards`;
-
-      if (!grid) return;
-
-      if (searchResultsList.length === 0) {
-        grid.innerHTML = '<div class="col-span-full text-center text-xs text-neutral-400 py-8">No Pokémon cards match your search.</div>';
-        return;
-      }
-
-      grid.innerHTML = searchResultsList.map(card => {
-        const formatted = formatCardObj(card, card.set?.name || 'Master Set');
-        const price = formatted.marketPrice;
-        const foilClass = getFoilTypeByRarity(formatted.rarity);
-
-        return `
-          <div class="card-3d-wrap">
-            <div class="card-3d glass-card rounded-xl overflow-hidden relative border border-white/10 p-2 flex flex-col justify-between h-full">
-              <div>
-                <div class="card-aspect relative rounded-lg overflow-hidden bg-black mb-1.5">
-                  <img src="${formatted.image}" alt="${escapeHtml(formatted.name)}" loading="lazy" class="w-full h-full object-contain" onerror="this.src='https://images.pokemontcg.io/cardback.png'" />
-                  <div class="foil-overlay ${foilClass}"></div>
-                  <div class="card-glare"></div>
-                </div>
-                <div class="text-left">
-                  <div class="text-xs font-black text-white truncate">${escapeHtml(formatted.name)}</div>
-                  <div class="text-[9px] text-neutral-400 font-bold truncate mt-0.5">${escapeHtml(formatted.rarity || 'Common')}</div>
-                  <div class="text-xs font-black text-amber-400 mt-0.5">$${price.toFixed(2)}</div>
-                </div>
-              </div>
-              <button onclick="addSearchCardToBinder('${card.id}')" class="w-full bg-amber-400 hover:bg-amber-300 text-black font-black py-1.5 rounded-lg text-[10px] mt-2 transition active:scale-95 flex items-center justify-center gap-1">
-                <i class="fa-solid fa-plus"></i> Add to Binder
-              </button>
+        if (grid) {
+          grid.innerHTML = `
+            <div class="col-span-full text-center py-12 text-neutral-400">
+              <i class="fa-solid fa-circle-exclamation text-3xl text-amber-400 mb-2"></i>
+              <p class="text-sm font-bold">Search failed. Please check network connection.</p>
             </div>
-          </div>
-        `;
-      }).join('');
-      init3DHoverPhysics();
+          `;
+        }
+      }
     }
 
     function addSearchCardToBinder(cardId) {
       const card = searchResultsList.find(c => c.id === cardId);
-      if (!card) return;
-      const formatted = formatCardObj(card, card.set?.name || 'Master Set');
-      binder.push(formatted);
-      saveState();
-      SoundEngine.playSnap();
-      showToast(`Added ${formatted.name} to binder!`);
+      if (card) {
+        const newCard = { ...card, uniqueId: 'card-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7), obtainedAt: Date.now() };
+        binder.push(newCard);
+        saveState();
+        SoundEngine.playSnap();
+        showToast(`Added ${card.name} to your Binder!`);
+      }
     }
 
-    // 3D Hover & Physics Effect
+    // 3D Perspective Hover Physics & Touch Swipe Controller
+    let isRevealTouchBound = false;
+
     function init3DHoverPhysics() {
       document.querySelectorAll('.card-3d-wrap, .pack-3d-wrap').forEach(wrap => {
+        if (wrap.dataset.tiltInitialized) return;
+        wrap.dataset.tiltInitialized = "true";
+
         const inner = wrap.querySelector('.card-3d, .pack-3d');
         if (!inner) return;
 
-        const handleMove = (e) => {
-          if (wrap.closest('#sealed-pack-inner')) return;
+        const handleMove = (clientX, clientY) => {
           const rect = wrap.getBoundingClientRect();
-          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          if (rect.width === 0 || rect.height === 0) return;
 
           const x = clientX - rect.left;
           const y = clientY - rect.top;
 
-          const percentX = (x / rect.width) * 100;
-          const percentY = (y / rect.height) * 100;
+          const xPct = Math.min(100, Math.max(0, (x / rect.width) * 100));
+          const yPct = Math.min(100, Math.max(0, (y / rect.height) * 100));
 
-          const rotateX = ((percentY - 50) / 50) * -12;
-          const rotateY = ((percentX - 50) / 50) * 12;
+          const rotX = ((y / rect.height) - 0.5) * -22;
+          const rotY = ((x / rect.width) - 0.5) * 22;
 
-          inner.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-          inner.style.setProperty('--pointer-x', `${percentX}`);
-          inner.style.setProperty('--pointer-y', `${percentY}`);
+          inner.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.02, 1.02, 1.02)`;
+          
+          wrap.style.setProperty('--pointer-x', xPct.toFixed(1));
+          wrap.style.setProperty('--pointer-y', yPct.toFixed(1));
         };
 
-        const handleLeave = () => {
-          inner.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-          inner.style.setProperty('--pointer-x', '50');
-          inner.style.setProperty('--pointer-y', '50');
+        const handleReset = () => {
+          inner.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+          inner.style.transition = 'transform 0.25s ease-out';
+          setTimeout(() => {
+            inner.style.transition = '';
+          }, 250);
         };
 
-        wrap.onmousemove = handleMove;
-        wrap.onmouseleave = handleLeave;
-        wrap.ontouchmove = handleMove;
-        wrap.ontouchend = handleLeave;
+        wrap.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+        wrap.addEventListener('mouseleave', handleReset);
       });
+
+      bindRevealMobileControls();
     }
 
-    // Initialize on load
-    window.addEventListener('DOMContentLoaded', () => {
+    function bindRevealMobileControls() {
+      const revealViewport = document.getElementById('card-reveal-viewport');
+      if (!revealViewport || isRevealTouchBound) return;
+      isRevealTouchBound = true;
+
+      let touchStartY = 0;
+      let touchStartX = 0;
+      let lastTouchY = 0;
+      let lastTouchX = 0;
+      let isTouching = false;
+      let touchStartTime = 0;
+
+      const innerCard = document.getElementById('holo-card-element');
+
+      revealViewport.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        isTouching = true;
+        const touch = e.touches[0];
+        touchStartY = touch.clientY;
+        touchStartX = touch.clientX;
+        lastTouchY = touch.clientY;
+        lastTouchX = touch.clientX;
+        touchStartTime = Date.now();
+        
+        if (innerCard) {
+          innerCard.style.transition = 'none';
+        }
+      }, { passive: true });
+
+      revealViewport.addEventListener('touchmove', (e) => {
+        if (!isTouching || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        lastTouchY = touch.clientY;
+        lastTouchX = touch.clientX;
+
+        const dy = lastTouchY - touchStartY;
+
+        // 1. Uninterrupted 3D Tilt looking animation based on current finger location
+        const rect = revealViewport.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const x = touch.clientX - rect.left;
+          const y = touch.clientY - rect.top;
+          const xPct = Math.min(100, Math.max(0, (x / rect.width) * 100));
+          const yPct = Math.min(100, Math.max(0, (y / rect.height) * 100));
+
+          const rotX = ((y / rect.height) - 0.5) * -26;
+          const rotY = ((x / rect.width) - 0.5) * 26;
+
+          revealViewport.style.setProperty('--pointer-x', xPct.toFixed(1));
+          revealViewport.style.setProperty('--pointer-y', yPct.toFixed(1));
+
+          // 2. Dynamic swipe motion feedback without interrupting tilt
+          const dragOffsetY = Math.abs(dy) > 10 ? dy * 0.45 : 0;
+          
+          if (innerCard) {
+            innerCard.style.transform = `perspective(1000px) translateY(${dragOffsetY}px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.03, 1.03, 1.03)`;
+          }
+        }
+      }, { passive: true });
+
+      const handleTouchEnd = () => {
+        if (!isTouching) return;
+        isTouching = false;
+
+        const dy = lastTouchY - touchStartY;
+        const dx = lastTouchX - touchStartX;
+        const dt = Date.now() - touchStartTime;
+
+        const swipeThreshold = 55; // Pixels required to trigger swipe up/down
+
+        if (innerCard) {
+          innerCard.style.transition = 'transform 0.25s ease-out';
+        }
+
+        if (dy < -swipeThreshold) {
+          // SWIPE UP -> Vault Card
+          justSwiped = true;
+          vaultCurrentCard();
+        } else if (dy > swipeThreshold) {
+          // SWIPE DOWN -> Sell Card
+          justSwiped = true;
+          ripCurrentCard();
+        } else {
+          // Inspecting/looking movement: Smooth reset back to center
+          if (innerCard) {
+            innerCard.style.transform = 'perspective(1000px) translateY(0px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+          }
+          // Quick tap trigger fallback
+          if (Math.abs(dy) < 10 && Math.abs(dx) < 10 && dt < 300) {
+            justSwiped = true;
+            vaultCurrentCard();
+          }
+        }
+      };
+
+      revealViewport.addEventListener('touchend', handleTouchEnd);
+      revealViewport.addEventListener('touchcancel', handleTouchEnd);
+    }
+
+    // Initialize Application State
+    window.onload = function() {
       updateUIHeader();
       renderPackStore();
       initCrimpPeelEvents();
-      
-      if (globalCardPool.length === 0) {
-        fetchCardPoolWithRetry(3);
-      }
-    });
+      init3DHoverPhysics();
+    };
   </script>
 </body>
 </html>
