@@ -347,13 +347,6 @@
             <i class="fa-solid fa-gift text-amber-500 text-sm"></i>
             <span class="hidden sm:inline">Daily</span>
           </button>
-          <button 
-            onclick="openAddCoinsModal()"
-            class="bg-amber-400 hover:bg-amber-300 text-black font-black px-2.5 py-2 rounded-xl text-xs flex items-center gap-1 shadow active:scale-95 transition min-h-[40px]"
-          >
-            <i class="fa-solid fa-circle-plus text-sm"></i>
-            <span class="hidden sm:inline">Add Cash</span>
-          </button>
         </div>
       </div>
 
@@ -412,15 +405,6 @@
 
           <!-- QOL Binder Action Controls -->
           <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              id="stack-toggle-btn"
-              onclick="toggleBinderStacking()"
-              class="glass-btn px-3 py-2 rounded-xl text-xs font-bold text-amber-300 border border-amber-400/30 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]"
-            >
-              <i class="fa-solid fa-layer-group text-amber-400"></i>
-              <span id="stack-btn-text">Stacking: ON</span>
-            </button>
-
             <button
               onclick="openSellBelowModal()"
               class="glass-btn hover:bg-neutral-800 px-3 py-2 rounded-xl text-xs font-bold text-neutral-200 border border-white/10 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]"
@@ -738,67 +722,6 @@
     </div>
   </div>
 
-  <!-- ADD CASH MODAL -->
-  <div id="coins-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
-    <div class="glass-panel rounded-2xl max-w-xs sm:max-w-sm w-full p-5 text-center relative border border-white/15 shadow-2xl">
-      <button onclick="closeAddCoinsModal()" class="absolute top-3 right-3 text-neutral-400 hover:text-white text-base w-8 h-8 flex items-center justify-center">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xl font-black mb-2 border border-amber-400/30">
-        <i class="fa-solid fa-sack-dollar"></i>
-      </div>
-
-      <h3 class="text-lg font-black text-white mb-1 tracking-tight">Add Fake Cash</h3>
-      <p class="text-xs text-neutral-400 mb-4">Select or type custom cash balance.</p>
-
-      <div class="grid grid-cols-4 gap-1.5 mb-3">
-        <button onclick="addCustomCoins(50)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
-          +$50
-        </button>
-        <button onclick="addCustomCoins(100)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
-          +$100
-        </button>
-        <button onclick="addCustomCoins(500)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
-          +$500
-        </button>
-        <button onclick="addCustomCoins(1000)" class="glass-btn hover:bg-white hover:text-black font-black py-2 rounded-xl text-xs text-white border border-white/10 transition active:scale-95">
-          +$1k
-        </button>
-      </div>
-
-      <div class="space-y-2.5">
-        <div class="relative">
-          <input
-            id="custom-coins-input"
-            type="number"
-            min="1"
-            placeholder="Custom amount ($)..."
-            class="w-full glass-btn rounded-xl px-3.5 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-amber-400/60 pr-10 min-h-[44px]"
-          />
-          <div class="absolute right-3 top-3 text-amber-400 text-xs font-bold">
-            $
-          </div>
-        </div>
-
-        <div class="flex gap-2">
-          <button
-            onclick="addCustomCoinsFromInput()"
-            class="flex-1 bg-amber-400 hover:bg-amber-300 text-black font-extrabold py-2.5 rounded-xl text-xs transition shadow-lg active:scale-95 flex items-center justify-center gap-1 min-h-[44px]"
-          >
-            <i class="fa-solid fa-plus"></i> Add
-          </button>
-          <button
-            onclick="setCustomCoinsFromInput()"
-            class="flex-1 glass-btn hover:bg-white hover:text-black text-white font-extrabold py-2.5 rounded-xl text-xs transition border border-white/15 active:scale-95 flex items-center justify-center gap-1 min-h-[44px]"
-          >
-            <i class="fa-solid fa-pen-to-square"></i> Set
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- SELL BELOW VALUE MODAL -->
   <div id="sell-below-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
     <div class="glass-panel rounded-2xl max-w-xs sm:max-w-sm w-full p-5 text-center relative border border-white/15 shadow-2xl">
@@ -1074,7 +997,6 @@
     let coins = parseFloat(localStorage.getItem('pokerips_cash') || localStorage.getItem('pokerips_coins') || '100.00');
     let binder = JSON.parse(localStorage.getItem('pokerips_binder') || '[]');
     let lastDailyClaim = parseInt(localStorage.getItem('pokerips_last_daily') || '0');
-    let isBinderStacking = JSON.parse(localStorage.getItem('pokerips_stacking') || 'true');
     let sellBelowThreshold = parseFloat(localStorage.getItem('pokerips_sell_below') || '1.00');
 
     // Cached Card Pool in localStorage
@@ -1204,7 +1126,6 @@
       localStorage.setItem('pokerips_cash', coins.toString());
       localStorage.setItem('pokerips_binder', JSON.stringify(binder));
       localStorage.setItem('pokerips_last_daily', lastDailyClaim.toString());
-      localStorage.setItem('pokerips_stacking', JSON.stringify(isBinderStacking));
       localStorage.setItem('pokerips_sell_below', sellBelowThreshold.toString());
       updateUIHeader();
     }
@@ -1318,38 +1239,6 @@
       SoundEngine.playCoin();
       if (window.confetti) confetti({ particleCount: 50, spread: 50 });
       closeDailyWheelModal();
-    }
-
-    function openAddCoinsModal() {
-      document.getElementById('coins-modal').classList.remove('hidden');
-    }
-
-    function closeAddCoinsModal() {
-      document.getElementById('coins-modal').classList.add('hidden');
-      document.getElementById('custom-coins-input').value = '';
-    }
-
-    function addCustomCoins(amount) {
-      if (isNaN(amount) || amount <= 0) return;
-      coins += amount;
-      saveState();
-      SoundEngine.playCoin();
-      closeAddCoinsModal();
-    }
-
-    function addCustomCoinsFromInput() {
-      const val = parseFloat(document.getElementById('custom-coins-input').value);
-      if (isNaN(val) || val <= 0) return;
-      addCustomCoins(val);
-    }
-
-    function setCustomCoinsFromInput() {
-      const val = parseFloat(document.getElementById('custom-coins-input').value);
-      if (isNaN(val) || val < 0) return;
-      coins = val;
-      saveState();
-      SoundEngine.playCoin();
-      closeAddCoinsModal();
     }
 
     async function renderPackStore() {
@@ -1551,9 +1440,18 @@
       };
 
       const pack = [];
+      const usedIds = new Set();
+
       for (let i = 0; i < count; i++) {
         const isRareSlot = (i >= count - 3);
-        const selectedCard = sampleCard(isRareSlot);
+        let selectedCard;
+        let attempts = 0;
+        do {
+          selectedCard = sampleCard(isRareSlot);
+          attempts++;
+        } while (usedIds.has(selectedCard.id) && attempts < 50);
+
+        usedIds.add(selectedCard.id);
         pack.push(formatCardObj(selectedCard, setName));
       }
 
@@ -1564,7 +1462,7 @@
       const productObj = PRODUCTS[productId] || PRODUCTS.universal_master_pack;
 
       if (coins < productObj.price) {
-        showToast("Not enough cash! Click 'Add Cash' at the top to add fake funds.", "error");
+        showToast("Not enough cash! Claim your Daily Cash allowance.", "error");
         return;
       }
 
@@ -1957,12 +1855,6 @@
       renderBinder();
     }
 
-    function toggleBinderStacking() {
-      isBinderStacking = !isBinderStacking;
-      saveState();
-      renderBinder();
-    }
-
     function sellAllDuplicates() {
       if (binder.length === 0) return;
 
@@ -2004,18 +1896,6 @@
         filtered = filtered.filter(c => c.setName === setFilter);
       }
 
-      const stackBtn = document.getElementById('stack-toggle-btn');
-      const stackText = document.getElementById('stack-btn-text');
-      if (stackBtn && stackText) {
-        if (isBinderStacking) {
-          stackBtn.className = "glass-btn px-3 py-2 rounded-xl text-xs font-bold text-amber-300 border border-amber-400/30 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]";
-          stackText.textContent = "Stacking: ON";
-        } else {
-          stackBtn.className = "glass-btn px-3 py-2 rounded-xl text-xs font-bold text-neutral-400 border border-white/10 flex items-center gap-1.5 active:scale-95 transition min-h-[40px]";
-          stackText.textContent = "Stacking: OFF";
-        }
-      }
-
       if (filtered.length === 0) {
         document.getElementById('binder-stats-text').textContent = "0 Unique Cards • 0 Total Cards";
         grid.innerHTML = `
@@ -2030,40 +1910,29 @@
 
       let displayItems = [];
 
-      if (isBinderStacking) {
-        const groups = new Map();
-        filtered.forEach(card => {
-          const key = card.id ? `${card.id}_${card.setName}` : `${card.name}_${card.rarity}_${card.setName}`;
-          if (!groups.has(key)) {
-            groups.set(key, []);
-          }
-          groups.get(key).push(card);
-        });
+      const groups = new Map();
+      filtered.forEach(card => {
+        const key = card.id ? `${card.id}_${card.setName}` : `${card.name}_${card.rarity}_${card.setName}`;
+        if (!groups.has(key)) {
+          groups.set(key, []);
+        }
+        groups.get(key).push(card);
+      });
 
-        groups.forEach((groupCards) => {
-          const repCard = groupCards[0];
-          const count = groupCards.length;
-          const totalVal = groupCards.reduce((sum, c) => sum + (c.marketPrice || 0), 0);
-          displayItems.push({
-            type: 'stack',
-            card: repCard,
-            count: count,
-            totalVal: totalVal,
-            items: groupCards
-          });
+      groups.forEach((groupCards) => {
+        const repCard = groupCards[0];
+        const count = groupCards.length;
+        const totalVal = groupCards.reduce((sum, c) => sum + (c.marketPrice || 0), 0);
+        displayItems.push({
+          type: 'stack',
+          card: repCard,
+          count: count,
+          totalVal: totalVal,
+          items: groupCards
         });
+      });
 
-        document.getElementById('binder-stats-text').textContent = `${displayItems.length} Unique Cards • ${filtered.length} Total Cards`;
-      } else {
-        displayItems = filtered.map(card => ({
-          type: 'single',
-          card: card,
-          count: 1,
-          totalVal: card.marketPrice || 0,
-          items: [card]
-        }));
-        document.getElementById('binder-stats-text').textContent = `${filtered.length} Total Cards`;
-      }
+      document.getElementById('binder-stats-text').textContent = `${displayItems.length} Unique Cards • ${filtered.length} Total Cards`;
 
       displayItems.sort((a, b) => {
         const valA = a.card.marketPrice || 0;
@@ -2115,16 +1984,11 @@
       let targetCard = null;
       let groupCards = [];
 
-      if (isBinderStacking) {
-        const found = binder.find(c => c.uniqueId === uniqueId);
-        if (found) {
-          const key = found.id ? `${found.id}_${found.setName}` : `${found.name}_${found.rarity}_${found.setName}`;
-          groupCards = binder.filter(c => (c.id ? `${c.id}_${c.setName}` : `${c.name}_${c.rarity}_${c.setName}`) === key);
-          targetCard = groupCards[0];
-        }
-      } else {
-        targetCard = binder.find(c => c.uniqueId === uniqueId);
-        if (targetCard) groupCards = [targetCard];
+      const found = binder.find(c => c.uniqueId === uniqueId);
+      if (found) {
+        const key = found.id ? `${found.id}_${found.setName}` : `${found.name}_${found.rarity}_${found.setName}`;
+        groupCards = binder.filter(c => (c.id ? `${c.id}_${c.setName}` : `${c.name}_${c.rarity}_${c.setName}`) === key);
+        targetCard = groupCards[0];
       }
 
       if (!targetCard) return;
